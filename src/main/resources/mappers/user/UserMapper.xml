@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="sisosolsol.greenfire.user.model.dao.UserMapper">
+
+    <resultMap id="userResultMap" type="sisosolsol.greenfire.user.model.dto.UserDTO">
+        <id property="userCode" column="user_code" typeHandler="sisosolsol.greenfire.common.handler.UUIDTypeHandler"/>
+        <result property="nickname" column="nickname"/>
+        <result property="name" column="name"/>
+        <result property="email" column="email"/>
+        <result property="birth" column="birth"/>
+        <result property="gender" column="gender"/>
+        <result property="phone" column="phone"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <select id="findByUserCode" resultMap="userResultMap">
+        SELECT
+        user_code,
+        nickname,
+        name,
+        email,
+        birth,
+        gender,
+        phone,
+        status
+        FROM
+        tbl_user
+        WHERE
+        user_code = CAST(#{userCode} AS uuid)
+        <!--        user_code = #{userCode, typeHandler=sisosolsol.greenfire.common.handler.UUIDTypeHandler}-->
+    </select>
+</mapper>
