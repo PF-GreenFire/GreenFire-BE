@@ -16,6 +16,19 @@
         <result property="status" column="status"/>
     </resultMap>
 
+    <resultMap id="userListResultMap" type="sisosolsol.greenfire.user.model.dto.UserListResponseDTO">
+        <id property="userCode" column="user_code" typeHandler="sisosolsol.greenfire.common.handler.UUIDTypeHandler"/>
+        <result property="nickname" column="nickname"/>
+        <result property="name" column="name"/>
+        <result property="email" column="email"/>
+        <result property="birth" column="birth"/>
+        <result property="gender" column="gender"/>
+        <result property="phone" column="phone"/>
+        <result property="status" column="status"/>
+        <result property="role" column="role"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
     <select id="findByUserCode" resultMap="userResultMap">
         SELECT
             user_code,
@@ -26,7 +39,7 @@
             gender,
             phone,
             status
-            FROM
+        FROM
             tbl_user
         WHERE
             user_code = CAST(#{userCode} AS uuid)
@@ -45,4 +58,25 @@
         WHERE
             user_code = CAST(#{userCode} AS uuid)
     </update>
+
+    <select id="findAll" resultMap="userListResultMap">
+        SELECT
+            u.user_code,
+            u.name,
+            u.email,
+            u.status,
+            CASE
+                WHEN au.raw_user_meta_data->>'role' = 'admin' THEN 'ADMIN'
+                WHEN au.raw_user_meta_data->>'role' = 'manager' THEN 'MANAGER'
+                ELSE 'USER'
+            END as role,
+            CAST(au.created_at AS timestamp) as created_at
+        FROM
+            tbl_user u
+            LEFT JOIN
+            auth.users au ON u.user_code = au.id
+        ORDER BY
+            au.created_at DESC
+    </select>
+
 </mapper>

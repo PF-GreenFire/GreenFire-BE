@@ -43,8 +43,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                         auth.requestMatchers("/api/public/**").permitAll();
                         auth.requestMatchers("/api/v1/challenge/**").permitAll();
-                        auth.requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN");
-                        auth.requestMatchers("/api/admin/**").hasRole("ADMIN");
+                        auth.requestMatchers("/api/v1/user/**").hasAnyRole("USER", "ADMIN");
+                        auth.requestMatchers("/api/v1/admin/**").hasRole("ADMIN");
                         auth.requestMatchers("/api/manager/**").hasRole("MANAGER");
                         // 그 외 모든 리소스 (인증 필요)
                         // auth.anyRequest().authenticated();

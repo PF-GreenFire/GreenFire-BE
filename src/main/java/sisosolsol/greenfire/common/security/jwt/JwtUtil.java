@@ -50,7 +50,7 @@ public class JwtUtil {
     private String extractCustomRole(Claims claims) {
         try {
             @SuppressWarnings("unchecked")
-            Map<String, Object> userMetadata = claims.get("raw_user_meta_data", Map.class);
+            Map<String, Object> userMetadata = claims.get("user_metadata", Map.class);
 
             if (userMetadata == null || !userMetadata.containsKey("role")) {
                 log.debug("No custom role found in raw_user_meta_data, using default role: USER");
