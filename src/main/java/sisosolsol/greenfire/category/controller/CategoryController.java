@@ -45,7 +45,7 @@ public class CategoryController {
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @DeleteMapping("/{categoryCode}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Integer categoryCode,
-                                               @RequestBody CategoryType categoryType) {
+                                               @RequestParam CategoryType categoryType) {
         categoryService.deleteCategory(categoryCode, categoryType);
         return ResponseEntity.noContent().build();
     }
