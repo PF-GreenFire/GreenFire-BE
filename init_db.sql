@@ -3,6 +3,32 @@
 -- PostgreSQL 데이터베이스 초기화 스크립트
 -- ============================================
 
+-- ============================================
+-- 실행 방법 (로컬 환경)
+-- ============================================
+-- 1. PostgreSQL 슈퍼유저로 데이터베이스 및 사용자 생성
+--    psql -U postgres -f setup_db.sql
+--    
+-- 2. greenfire_db_dev 데이터베이스에 연결하여 이 스크립트 실행
+--    psql -U greenfire_dev -d greenfire_db_dev -f init_db.sql
+--
+-- 또는 psql에서 직접 실행:
+--    \c greenfire_db_dev
+--    \i init_db.sql
+-- ============================================
+
+-- 기존 테이블 삭제 (재실행 시 에러 방지)
+DROP TABLE IF EXISTS tbl_image CASCADE;
+DROP TABLE IF EXISTS tbl_post CASCADE;
+DROP TABLE IF EXISTS tbl_store CASCADE;
+DROP TABLE IF EXISTS tbl_challenge_part CASCADE;
+DROP TABLE IF EXISTS tbl_challenge CASCADE;
+DROP TABLE IF EXISTS tbl_store_category CASCADE;
+DROP TABLE IF EXISTS tbl_challenge_category CASCADE;
+DROP TABLE IF EXISTS tbl_location CASCADE;
+DROP TABLE IF EXISTS tbl_area CASCADE;
+DROP TABLE IF EXISTS tbl_user CASCADE;
+
 -- 1. tbl_user (사용자)
 CREATE TABLE tbl_user (
     user_code UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -125,5 +151,42 @@ CREATE TABLE tbl_image (
     FOREIGN KEY (store_code) REFERENCES tbl_store(store_code)
 );
 
+-- ============================================
+-- 인덱스 생성 (실제 사용되는 쿼리 기반)
+-- ============================================
 
+-- 챌린지 목록 조회 시 사용 (ORDER BY created_at DESC)
+CREATE INDEX idx_challenge_created_at ON tbl_challenge(created_at DESC);
+
+-- 챌린지 카테고리 필터링 시 사용
+CREATE INDEX idx_challenge_category ON tbl_challenge(challenge_category_code);
+
+-- 챌린지 참여 확인 (challenge_code, user_code 복합 조회)
+CREATE INDEX idx_challenge_part_composite ON tbl_challenge_part(challenge_code, user_code);
+
+-- 챌린지 참여자 수 카운트 (challenge_code로 그룹핑)
+CREATE INDEX idx_challenge_part_challenge ON tbl_challenge_part(challenge_code);
+
+-- 게시글 목록 조회 (post_status 필터링 + created_at 정렬)
+CREATE INDEX idx_post_status_created ON tbl_post(post_status, created_at DESC);
+
+-- 챌린지별 게시글 조회 (challenge_code 필터링)
+CREATE INDEX idx_post_challenge ON tbl_post(challenge_code);
+
+-- 가게 상태별 조회 (store_status 필터링 + created_at 정렬)
+CREATE INDEX idx_store_status_created ON tbl_store(store_status, created_at DESC);
+
+-- 사용자별 신청한 가게 목록 조회
+CREATE INDEX idx_store_user ON tbl_store(user_code);
+
+-- 이메일 기반 사용자 조회 (로그인/인증 시 사용 예상)
+CREATE INDEX idx_user_email ON tbl_user(email);
+
+-- 완료 메시지
+DO $$
+BEGIN
+    RAISE NOTICE '====================================';
+    RAISE NOTICE 'GreenFire Database 초기화 완료!';
+    RAISE NOTICE '====================================';
+END $$;
 
