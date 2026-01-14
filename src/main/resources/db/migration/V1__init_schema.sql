@@ -1,33 +1,7 @@
 -- ============================================
 -- GreenFire Database Schema
--- PostgreSQL 데이터베이스 초기화 스크립트
+-- Version 1: Initial Schema Setup
 -- ============================================
-
--- ============================================
--- 실행 방법 (로컬 환경)
--- ============================================
--- 1. PostgreSQL 슈퍼유저로 데이터베이스 및 사용자 생성
---    psql -U postgres -f setup_db.sql
---    
--- 2. greenfire_db_dev 데이터베이스에 연결하여 이 스크립트 실행
---    psql -U greenfire_dev -d greenfire_db_dev -f init_db.sql
---
--- 또는 psql에서 직접 실행:
---    \c greenfire_db_dev
---    \i init_db.sql
--- ============================================
-
--- 기존 테이블 삭제 (재실행 시 에러 방지)
-DROP TABLE IF EXISTS tbl_image CASCADE;
-DROP TABLE IF EXISTS tbl_post CASCADE;
-DROP TABLE IF EXISTS tbl_store CASCADE;
-DROP TABLE IF EXISTS tbl_challenge_part CASCADE;
-DROP TABLE IF EXISTS tbl_challenge CASCADE;
-DROP TABLE IF EXISTS tbl_store_category CASCADE;
-DROP TABLE IF EXISTS tbl_challenge_category CASCADE;
-DROP TABLE IF EXISTS tbl_location CASCADE;
-DROP TABLE IF EXISTS tbl_area CASCADE;
-DROP TABLE IF EXISTS tbl_user CASCADE;
 
 -- 1. tbl_user (사용자)
 CREATE TABLE tbl_user (
@@ -152,7 +126,7 @@ CREATE TABLE tbl_image (
 );
 
 -- ============================================
--- 인덱스 생성 (실제 사용되는 쿼리 기반)
+-- Indexes
 -- ============================================
 
 -- 챌린지 목록 조회 시 사용 (ORDER BY created_at DESC)
@@ -179,14 +153,6 @@ CREATE INDEX idx_store_status_created ON tbl_store(store_status, created_at DESC
 -- 사용자별 신청한 가게 목록 조회
 CREATE INDEX idx_store_user ON tbl_store(user_code);
 
--- 이메일 기반 사용자 조회 (로그인/인증 시 사용 예상)
+-- 이메일 기반 사용자 조회 (로그인/인증 시 사용)
 CREATE INDEX idx_user_email ON tbl_user(email);
-
--- 완료 메시지
-DO $$
-BEGIN
-    RAISE NOTICE '====================================';
-    RAISE NOTICE 'GreenFire Database 초기화 완료!';
-    RAISE NOTICE '====================================';
-END $$;
 

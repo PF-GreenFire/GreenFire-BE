@@ -9,6 +9,7 @@
 - PostgreSQL
 - MyBatis
 - Spring Security + JWT
+- Flyway (DB 마이그레이션)
 
 ## 데이터베이스 설정
 
@@ -41,20 +42,7 @@ psql -U postgres -f setup_db.sql
 - 사용자: `greenfire_dev` 생성
 - 비밀번호: `dev1234!`
 
-### 3. 테이블 및 초기 데이터 생성
-
-생성된 greenfire_dev 사용자로 init_db.sql 실행:
-
-```bash
-psql -U greenfire_dev -d greenfire_db_dev -f init_db.sql
-```
-
-이 스크립트는 다음을 수행합니다:
-- 모든 테이블 생성
-- 필요한 인덱스 생성
-- 초기 카테고리 데이터 삽입 (지역, 챌린지 카테고리, 가게 카테고리)
-
-### 4. 설정 파일 생성
+### 3. 설정 파일 생성
 
 ```bash
 cp application.yml.template src/main/resources/application.yml
@@ -70,22 +58,43 @@ spring:
     password: dev1234!  # setup_db.sql에서 설정한 비밀번호
 ```
 
-### 5. 실행
+### 4. 실행
 
 ```bash
 ./gradlew bootRun
 ```
 
-### 데이터베이스 재설정 (필요 시)
+**✨ 애플리케이션 시작 시 Flyway가 자동으로 데이터베이스 스키마를 생성합니다!**
 
-전체 데이터베이스를 재설정하려면:
+- 더 이상 `init_db.sql`을 수동으로 실행할 필요가 없습니다
+- 팀원이 추가한 스키마 변경사항이 자동으로 적용됩니다
+- Git pull 후 앱 재시작만 하면 DB가 자동 동기화됩니다
+
+## 📚 DB 마이그레이션 (Flyway)
+
+**중요**: DB 스키마 변경 및 팀 협업에 대한 자세한 내용은 [FLYWAY_GUIDE.md](./FLYWAY_GUIDE.md)를 참고하세요!
+
+### 빠른 시작
+
+1. **신규 팀원**: `setup_db.sql` 실행 → 앱 실행 → 자동 마이그레이션 ✨
+2. **스키마 변경**: `src/main/resources/db/migration/V{n}__{설명}.sql` 파일 추가
+3. **동기화**: Git pull → 앱 재시작 → 자동 적용
+
+### 마이그레이션 이력 확인
 
 ```bash
-# 1. 데이터베이스 및 사용자 재생성
+psql -U greenfire_dev -d greenfire_db_dev
+SELECT * FROM flyway_schema_history;
+```
+
+### 데이터베이스 재설정 (필요 시)
+
+```bash
+# 데이터베이스 및 사용자 재생성
 psql -U postgres -f setup_db.sql
 
-# 2. 테이블 재생성
-psql -U greenfire_dev -d greenfire_db_dev -f init_db.sql
+# 애플리케이션 재시작 (Flyway가 자동으로 마이그레이션 실행)
+./gradlew bootRun
 ```
 
 ## 프로젝트 구조
