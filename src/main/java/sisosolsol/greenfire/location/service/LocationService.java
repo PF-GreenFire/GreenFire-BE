@@ -13,8 +13,7 @@ public class LocationService {
     private final LocationMapper locationMapper;
 
     //초록불 장소 신청 등록시 지역 정보 등록
-    @Transactional
-    public int registLocation(LocationDTO location) {
+    public int registerLocation(LocationDTO location) {
         return locationMapper.registLocation(location);
     }
 }

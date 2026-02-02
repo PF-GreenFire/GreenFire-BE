@@ -1,4 +1,4 @@
-package sisosolsol.greenfire.user.model.dto;
+package sisosolsol.greenfire.user.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Pattern;

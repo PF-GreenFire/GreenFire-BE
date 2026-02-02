@@ -1,5 +1,6 @@
 package sisosolsol.greenfire.user.service;
 
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -8,9 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
 import sisosolsol.greenfire.common.exception.BadRequestException;
 import sisosolsol.greenfire.common.exception.type.ExceptionCode;
 import sisosolsol.greenfire.common.security.model.CustomUserDetails;
-import sisosolsol.greenfire.user.model.dao.UserMapper;
-import sisosolsol.greenfire.user.model.dto.UserDTO;
-import sisosolsol.greenfire.user.model.dto.UserUpdateDTO;
+import sisosolsol.greenfire.user.dao.UserMapper;
+import sisosolsol.greenfire.user.dto.ScrapbookSummaryDTO;
+import sisosolsol.greenfire.user.dto.UserDTO;
+import sisosolsol.greenfire.user.dto.UserUpdateDTO;
 
 import java.util.Optional;
 
@@ -45,5 +47,9 @@ public class UserService {
         } catch (DataAccessException e) {
             throw new BadRequestException(ExceptionCode.DATABASE_ACCESS_ERROR);
         }
+    }
+
+    public ScrapbookSummaryDTO getScrapbookSummary(UUID userCode) {
+        return userMapper.getScrapbookSummary(userCode);
     }
 }

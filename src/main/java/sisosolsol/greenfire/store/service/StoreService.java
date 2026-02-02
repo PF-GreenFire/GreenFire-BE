@@ -96,7 +96,7 @@ public class StoreService {
             processImages(storeCode, updateDTO.getImages()); // 이미지 파일 삭제 후 등록
         }
     }
-  
+
     // 관리자 장소 상태 변경
     public void updateStoreStatus(int storeCode, StoreUpdateStatusDTO storeUpdateStatusDTO) {
         storeMapper.updateStoreStatus(storeCode, storeUpdateStatusDTO);
@@ -107,7 +107,7 @@ public class StoreService {
         int locationCode = locationMapper.findLocationByCoordinates(location.getLatitude(), location.getLongitude());
 
         if (locationCode == 0) {
-            locationService.registLocation(location);
+            locationService.registerLocation(location);
             locationCode = locationMapper.findLocationByCoordinates(location.getLatitude(), location.getLongitude());
         }
 
