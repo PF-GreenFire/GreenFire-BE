@@ -58,7 +58,7 @@ public class UserService {
         List<ChallengeDTO> challengeSummary = userMapper.getChallengeSummary(userCode);
         UserProfileDTO userProfileDTO = UserProfileDTO.builder()
                                                     .scrapbookSummary(scrapbookSummary)
-                                                    .challenge(challengeSummary)
+                                                    .challenges(challengeSummary)
                                                     .build();
         return userProfileDTO;
     }

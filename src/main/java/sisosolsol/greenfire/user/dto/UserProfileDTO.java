@@ -9,5 +9,5 @@ import sisosolsol.greenfire.challenge.model.dto.ChallengeDTO;
 @Builder
 public class UserProfileDTO {
     private ScrapbookSummaryDTO scrapbookSummary;
-    private List<ChallengeDTO> challenge;
+    private List<ChallengeDTO> challenges;
 }
