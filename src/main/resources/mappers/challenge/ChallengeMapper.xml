@@ -6,7 +6,7 @@
 <mapper namespace="sisosolsol.greenfire.challenge.model.dao.ChallengeMapper">
     <insert id="registChallenge" useGeneratedKeys="true" keyProperty="challengeCode">
         INSERT INTO
-            tbl_challenge (
+            challenge (
             challenge_title,
             challenge_content,
             recruitment_num,
@@ -47,13 +47,13 @@
             thumbnail_url,
             challenge_category_code,
             challenge_status
-        FROM tbl_challenge
+        FROM challenge
         WHERE challenge_code = #{challengeCode}
     </select>
 
     <select id="countChallenges" parameterType="sisosolsol.greenfire.challenge.model.dto.ChallengeSearchCondition" resultType="int">
         SELECT COUNT(*)
-        FROM tbl_challenge
+        FROM challenge
         <where>
             <if test="searchKeyword != null and searchKeyword != ''">
                 AND (challenge_title LIKE CONCAT('%', #{searchKeyword}, '%')
@@ -79,7 +79,7 @@
             thumbnail_url,
             challenge_category_code,
             challenge_status
-        FROM tbl_challenge
+        FROM challenge
         <where>
             <if test="searchKeyword != null and searchKeyword != ''">
                 AND (challenge_title LIKE CONCAT('%', #{searchKeyword}, '%')
@@ -95,12 +95,12 @@
 
     <select id="countCurrentParticipants" resultType="int">
         SELECT COUNT(*)
-        FROM tbl_challenge_part
+        FROM challenge_part
         WHERE challenge_code = #{challengeCode}
     </select>
 
     <insert id="insertChallengePart">
-        INSERT INTO tbl_challenge_part
+        INSERT INTO challenge_part
             (
             challenge_code,
             user_code,
@@ -120,7 +120,7 @@
             user_code as userCode
             <!-- is_host as isHost -->
         FROM
-            tbl_challenge_part
+            challenge_part
         WHERE
             challenge_code = #{challengeCode}
             AND user_code = #{userCode}::uuid
@@ -128,7 +128,7 @@
 
     <delete id="cancelChallengePart">
         DELETE FROM
-            tbl_challenge_part
+            challenge_part
         WHERE
             challenge_code = #{challengeCode}
             AND user_code = #{userCode}::uuid

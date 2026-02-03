@@ -46,5 +46,33 @@
             user_code = CAST(#{userCode} AS uuid)
     </update>
 
-    <select id="getScrapbookSummary"></select>
+    <select id="getScrapbookSummary" resultType="sisosolsol.greenfire.user.dto.ScrapbookSummaryDTO">
+        SELECT
+        (SELECT count(store_code) FROM store WHERE user_code = #{userCode}) AS greenfireCount,
+        (SELECT count(challenge_part_code) FROM challenge_part WHERE user_code = #{userCode}) AS challengeCount,
+        (SELECT count(post_code) FROM post WHERE user_code = #{userCode}) AS feedCount,
+        (SELECT count(target_user) FROM user_follows WHERE user_code = #{userCode}) AS friendCount
+    </select>
+
+    <select id="getChallengeSummary" resultType="sisosolsol.greenfire.challenge.model.dto.ChallengeDTO">
+        SELECT *
+        FROM (
+            SELECT
+                ch.challenge_code as challengeCode,
+                ch.challenge_title as challengeTitle,
+                ch.challenge_content,
+                ch.thumbnail_url as thumbnail,
+                COUNT(*) OVER() AS totalCount,
+                ROW_NUMBER() OVER(ORDER BY ch.created_at) AS rn
+            FROM
+                challenge_part cp
+            LEFT JOIN
+                challenge ch
+            ON
+                cp.challenge_code = ch.challenge_code
+            WHERE
+                cp.user_code = #{userCode}
+        ) t
+        WHERE t.rn <![CDATA[<=]]> 3
+    </select>
 </mapper>

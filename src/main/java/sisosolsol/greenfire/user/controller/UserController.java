@@ -1,6 +1,7 @@
 package sisosolsol.greenfire.user.controller;
 
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,6 +18,12 @@ public class UserController {
 
     private final UserService userService;
 
+    @GetMapping
+    public ResponseEntity getScrapbookSummary(@AuthenticationPrincipal CustomUserDetails loginUser) {
+//        return ResponseEntity.ok(userService.getScrapbookSummary(loginUser.getId()));
+        return ResponseEntity.ok(userService.getScrapbookSummary(UUID.randomUUID()));
+    }
+
     @GetMapping("/profiles/me")
     public ResponseEntity<UserDTO> getUserProfile(@AuthenticationPrincipal CustomUserDetails loginUser) {
         UserDTO userDTO = userService.getUserProfile(loginUser);
@@ -29,10 +36,5 @@ public class UserController {
             @Valid @RequestBody UserUpdateDTO request) {
         UserDTO updatedProfile = userService.updateUserProfile(loginUser, request);
         return ResponseEntity.ok(updatedProfile);
-    }
-
-    @GetMapping("/scrapbook")
-    public ResponseEntity getScrapbookSummary(@AuthenticationPrincipal CustomUserDetails loginUser) {
-        return ResponseEntity.ok(userService.getScrapbookSummary(loginUser.getId()));
     }
 }
