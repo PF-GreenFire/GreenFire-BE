@@ -31,5 +31,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exceptionResponse);
     }
 
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ExceptionResponse> conflictException(ConflictException e) {
+        final ExceptionResponse exceptionResponse = ExceptionResponse.of(e.getCode(), e.getMessage());
 
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(exceptionResponse);
+    }
 }
