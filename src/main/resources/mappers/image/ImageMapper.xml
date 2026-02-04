@@ -43,4 +43,64 @@
         WHERE store_code = #{storeCode}
     </delete>
 
+    <!-- 범용 이미지 저장 -->
+    <insert id="saveImage" useGeneratedKeys="true" keyProperty="image.imageCode">
+        INSERT INTO
+        tbl_image (reference_type, reference_code, path, origin_name, file_name, "order")
+        VALUES
+        (
+        #{referenceType}, #{referenceCode}, #{image.path}, #{image.originName}, #{image.fileName},
+        (
+        SELECT
+        COALESCE(MAX("order"), 0) + 1
+        FROM
+        tbl_image
+        WHERE
+        reference_type = #{referenceType} AND reference_code = #{referenceCode}
+        )
+        )
+    </insert>
+
+    <!-- 범용 이미지 조회 -->
+    <select id="findByReference" resultType="sisosolsol.greenfire.image.model.dto.ImageDTO">
+        SELECT
+        image_code as imageCode,
+        reference_type as referenceType,
+        reference_code as referenceCode,
+        path,
+        origin_name as originName,
+        file_name as fileName,
+        "order"
+        FROM
+        tbl_image
+        WHERE
+        reference_type = #{referenceType}
+        AND reference_code = #{referenceCode}
+        ORDER BY
+        "order" ASC, image_code ASC
+    </select>
+
+    <!-- 범용 이미지 전체 삭제 -->
+    <delete id="deleteAllByReference">
+        DELETE FROM tbl_image
+        WHERE reference_type = #{referenceType} AND reference_code = #{referenceCode}
+    </delete>
+
+    <!-- 특정 이미지 삭제 -->
+    <delete id="deleteByImageCode">
+        DELETE FROM tbl_image
+        WHERE image_code = #{imageCode}
+    </delete>
+
+    <!-- 이미지 개수 조회 -->
+    <select id="countByReference" resultType="int">
+        SELECT
+        COUNT(*)
+        FROM
+        tbl_image
+        WHERE
+        reference_type = #{referenceType}
+        AND reference_code = #{referenceCode}
+    </select>
+
 </mapper>
