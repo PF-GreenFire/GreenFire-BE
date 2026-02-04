@@ -15,7 +15,7 @@ import java.util.UUID;
 public interface UserMapper {
 
     // 회원 프로필 정보 조회
-    UserDTO findByUserCode(UUID userCode);
+    UserDTO findByUserCode(@Param("userCode") UUID userCode);
 
     // 회원 프로필 정보 수정
     void updateUserProfile(@Param("userCode") UUID userCode, @Param("userDTO") UserUpdateDTO user);
@@ -23,4 +23,6 @@ public interface UserMapper {
     ScrapbookSummaryDTO getScrapbookSummary(@Param("userCode") UUID userCode);
 
     List<ChallengeDTO> getChallengeSummary(@Param("userCode") UUID userCode);
+
+    int countParticipatingChallenge(UUID userCode);
 }

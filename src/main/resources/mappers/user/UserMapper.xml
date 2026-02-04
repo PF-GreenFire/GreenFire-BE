@@ -26,16 +26,15 @@
             gender,
             phone,
             status
-            FROM
-            tbl_user
+        FROM
+            users
         WHERE
-            user_code = CAST(#{userCode} AS uuid)
-        <!--        user_code = #{userCode, typeHandler=sisosolsol.greenfire.common.handler.UUIDTypeHandler}-->
+            user_code = #{userCode}
     </select>
 
     <update id="updateUserProfile">
         UPDATE
-            tbl_user
+            user
         SET
             nickname = #{userDTO.nickname},
             name = #{userDTO.name},
@@ -43,7 +42,7 @@
             gender = #{userDTO.gender},
             phone = #{userDTO.phone}
         WHERE
-            user_code = CAST(#{userCode} AS uuid)
+            user_code = #{userCode}
     </update>
 
     <select id="getScrapbookSummary" resultType="sisosolsol.greenfire.user.dto.ScrapbookSummaryDTO">
@@ -62,7 +61,6 @@
                 ch.challenge_title as challengeTitle,
                 ch.challenge_content,
                 ch.thumbnail_url as thumbnail,
-                COUNT(*) OVER() AS totalCount,
                 ROW_NUMBER() OVER(ORDER BY ch.created_at) AS rn
             FROM
                 challenge_part cp
@@ -74,5 +72,14 @@
                 cp.user_code = #{userCode}
         ) t
         WHERE t.rn <![CDATA[<=]]> 3
+    </select>
+
+    <select id="countParticipatingChallenge" resultType="int">
+        SELECT
+            COUNT(challenge_part_code)
+        FROM
+            challenge_part
+        WHERE
+            user_code = #{userCode}
     </select>
 </mapper>

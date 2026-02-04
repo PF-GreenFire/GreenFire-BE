@@ -13,6 +13,7 @@ import sisosolsol.greenfire.common.exception.BadRequestException;
 import sisosolsol.greenfire.common.exception.type.ExceptionCode;
 import sisosolsol.greenfire.common.security.model.CustomUserDetails;
 import sisosolsol.greenfire.user.dao.UserMapper;
+import sisosolsol.greenfire.user.dto.ChallengeSummaryDTO;
 import sisosolsol.greenfire.user.dto.ScrapbookSummaryDTO;
 import sisosolsol.greenfire.user.dto.UserDTO;
 import sisosolsol.greenfire.user.dto.UserProfileDTO;
@@ -26,26 +27,27 @@ public class UserService {
 
     private final UserMapper userMapper;
 
-    public UserDTO getUserProfile(CustomUserDetails loginUser) {
-        try {
-            return Optional.ofNullable(userMapper.findByUserCode(loginUser.getId()))
-                    .orElseThrow(() -> new BadRequestException(ExceptionCode.USER_NOT_FOUND));
-        } catch (DataIntegrityViolationException e) {
-            throw new BadRequestException(ExceptionCode.INVALID_FOREIGN_KEY);
-        } catch (DataAccessException e) {
-            throw new BadRequestException(ExceptionCode.DATABASE_ACCESS_ERROR);
-        }
+    public UserDTO getUserProfile(UUID userCode) {
+//        try {
+//            return Optional.ofNullable(userMapper.findByUserCode(userCode))
+//                    .orElseThrow(() -> new BadRequestException(ExceptionCode.USER_NOT_FOUND));
+//        } catch (DataIntegrityViolationException e) {
+//            throw new BadRequestException(ExceptionCode.INVALID_FOREIGN_KEY);
+//        } catch (DataAccessException e) {
+//            throw new BadRequestException(ExceptionCode.DATABASE_ACCESS_ERROR);
+//        }
+        return userMapper.findByUserCode(userCode);
     }
 
     @Transactional
-    public UserDTO updateUserProfile(CustomUserDetails loginUser, UserUpdateDTO request) {
+    public UserDTO updateUserProfile(UUID userCode, UserUpdateDTO request) {
         try {
-            UserDTO user = Optional.ofNullable(userMapper.findByUserCode(loginUser.getId()))
+            UserDTO user = Optional.ofNullable(userMapper.findByUserCode(userCode))
                     .orElseThrow(() -> new BadRequestException(ExceptionCode.USER_NOT_FOUND));
 
-            userMapper.updateUserProfile(loginUser.getId(), request);
+            userMapper.updateUserProfile(userCode, request);
 
-            return userMapper.findByUserCode(loginUser.getId());
+            return userMapper.findByUserCode(userCode);
         } catch (DataIntegrityViolationException e) {
             throw new BadRequestException(ExceptionCode.INVALID_FOREIGN_KEY);
         } catch (DataAccessException e) {
@@ -53,12 +55,19 @@ public class UserService {
         }
     }
 
-    public UserProfileDTO getScrapbookSummary(UUID userCode) {
+    public UserProfileDTO getUserSummaryData(UUID userCode) {
         ScrapbookSummaryDTO scrapbookSummary = userMapper.getScrapbookSummary(userCode);
-        List<ChallengeDTO> challengeSummary = userMapper.getChallengeSummary(userCode);
+
+        int challengeTotalCount = userMapper.countParticipatingChallenge(userCode);
+        List<ChallengeDTO> challenges = userMapper.getChallengeSummary(userCode);
+        ChallengeSummaryDTO challengeSummary = ChallengeSummaryDTO.builder()
+                                                                .totalCount(challengeTotalCount)
+                                                                .challenges(challenges)
+                                                                .build();
+
         UserProfileDTO userProfileDTO = UserProfileDTO.builder()
                                                     .scrapbookSummary(scrapbookSummary)
-                                                    .challenges(challengeSummary)
+                                                    .challengeSummary(challengeSummary)
                                                     .build();
         return userProfileDTO;
     }
