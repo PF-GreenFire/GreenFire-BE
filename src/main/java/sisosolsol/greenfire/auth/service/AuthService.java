@@ -7,19 +7,24 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sisosolsol.greenfire.auth.dto.*;
+import sisosolsol.greenfire.auth.entity.PasswordResetCode;
 import sisosolsol.greenfire.auth.entity.RefreshToken;
+import sisosolsol.greenfire.auth.repository.PasswordResetCodeRepository;
 import sisosolsol.greenfire.auth.repository.RefreshTokenRepository;
+import sisosolsol.greenfire.common.service.EmailService;
 import sisosolsol.greenfire.common.audit.entity.ActionType;
 import sisosolsol.greenfire.common.audit.entity.ResourceType;
 import sisosolsol.greenfire.common.audit.service.ActivityLogService;
 import sisosolsol.greenfire.common.exception.BadRequestException;
 import sisosolsol.greenfire.common.exception.ConflictException;
+import sisosolsol.greenfire.common.exception.NotFoundException;
 import sisosolsol.greenfire.common.exception.type.ExceptionCode;
 import sisosolsol.greenfire.common.security.jwt.JwtUtil;
 import sisosolsol.greenfire.common.security.model.UserRole;
 import sisosolsol.greenfire.user.entity.UserAccount;
 import sisosolsol.greenfire.user.repository.UserAccountRepository;
 
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -35,12 +40,16 @@ public class AuthService {
             "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$"
     );
     private static final int REJOIN_COOLDOWN_DAYS = 30;
+    private static final int RESET_CODE_EXPIRY_MINUTES = 5;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final UserAccountRepository userAccountRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final PasswordResetCodeRepository passwordResetCodeRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final ActivityLogService activityLogService;
+    private final EmailService emailService;
 
     @Transactional
     public void signup(SignupRequest req, String ipAddress) {
@@ -199,6 +208,91 @@ public class AuthService {
             return Instant.now().isAfter(cooldownEnd);
         }
         return false;
+    }
+
+    /**
+     * 아이디 찾기: 이메일로 가입 여부 확인 (마스킹 처리)
+     */
+    @Transactional(readOnly = true)
+    public FindEmailResponse findEmail(String email) {
+        Optional<UserAccount> existing = userAccountRepository.findByEmail(email);
+        if (existing.isEmpty() || existing.get().isDeleted()) {
+            return new FindEmailResponse(false, null);
+        }
+        return new FindEmailResponse(true, maskEmail(email));
+    }
+
+    /**
+     * 비밀번호 재설정: 인증코드 발송
+     */
+    @Transactional
+    public void sendResetCode(String email) {
+        UserAccount user = userAccountRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new NotFoundException(ExceptionCode.USER_NOT_FOUND));
+
+        // 기존 코드 삭제
+        passwordResetCodeRepository.deleteByEmail(email);
+
+        // 6자리 랜덤 코드 생성
+        String code = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
+        Instant expiresAt = Instant.now().plus(RESET_CODE_EXPIRY_MINUTES, ChronoUnit.MINUTES);
+
+        passwordResetCodeRepository.save(new PasswordResetCode(email, code, expiresAt));
+        emailService.sendPasswordResetCode(email, code);
+    }
+
+    /**
+     * 비밀번호 재설정: 인증코드 검증
+     */
+    @Transactional
+    public void verifyResetCode(String email, String code) {
+        PasswordResetCode resetCode = passwordResetCodeRepository
+                .findByEmailAndCodeAndVerifiedFalse(email, code)
+                .orElseThrow(() -> new BadRequestException(ExceptionCode.RESET_CODE_INVALID));
+
+        if (resetCode.isExpired()) {
+            throw new BadRequestException(ExceptionCode.RESET_CODE_EXPIRED);
+        }
+
+        resetCode.markVerified();
+    }
+
+    /**
+     * 비밀번호 재설정: 새 비밀번호 설정
+     */
+    @Transactional
+    public void resetPassword(String email, String code, String newPassword) {
+        // verified 코드 확인
+        PasswordResetCode resetCode = passwordResetCodeRepository
+                .findByEmailAndCodeAndVerifiedTrue(email, code)
+                .orElseThrow(() -> new BadRequestException(ExceptionCode.RESET_CODE_NOT_VERIFIED));
+
+        if (resetCode.isExpired()) {
+            throw new BadRequestException(ExceptionCode.RESET_CODE_EXPIRED);
+        }
+
+        // 비밀번호 강도 검증
+        if (!PASSWORD_PATTERN.matcher(newPassword).matches()) {
+            throw new BadRequestException(ExceptionCode.WEAK_PASSWORD);
+        }
+
+        UserAccount user = userAccountRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new NotFoundException(ExceptionCode.USER_NOT_FOUND));
+
+        user.updatePassword(passwordEncoder.encode(newPassword));
+
+        // 코드 삭제 + 전체 세션 폐기
+        passwordResetCodeRepository.deleteByEmail(email);
+        refreshTokenRepository.revokeAllByUserId(user.getId());
+    }
+
+    private String maskEmail(String email) {
+        int atIndex = email.indexOf('@');
+        if (atIndex <= 1) return email;
+        String local = email.substring(0, atIndex);
+        String domain = email.substring(atIndex);
+        if (local.length() <= 2) return local.charAt(0) + "*" + domain;
+        return local.charAt(0) + "*".repeat(local.length() - 2) + local.charAt(local.length() - 1) + domain;
     }
 
     private void saveRefreshToken(UUID userId, String rawToken, String family) {

@@ -40,7 +40,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/me").authenticated()
                         .requestMatchers("/api/v1/auth/login", "/api/v1/auth/signup",
                                 "/api/v1/auth/refresh", "/api/v1/auth/logout",
-                                "/api/v1/auth/check-email").permitAll()
+                                "/api/v1/auth/check-email",
+                                "/api/v1/auth/find-email",
+                                "/api/v1/auth/password-reset/**").permitAll()
                         .requestMatchers("/api/public/**", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
                         .anyRequest().authenticated()
                 )

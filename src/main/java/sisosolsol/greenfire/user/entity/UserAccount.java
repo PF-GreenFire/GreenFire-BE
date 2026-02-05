@@ -41,6 +41,10 @@ public class UserAccount {
         this.role = role;
     }
 
+    public void updatePassword(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
+    }
+
     public void markDeleted(String reason) {
         this.deletedAt = Instant.now();
         this.deleteReason = reason;

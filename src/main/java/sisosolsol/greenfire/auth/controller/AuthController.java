@@ -82,6 +82,30 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("available", available));
     }
 
+    @PostMapping("/find-email")
+    public ResponseEntity<FindEmailResponse> findEmail(@Valid @RequestBody FindEmailRequest req) {
+        FindEmailResponse result = authService.findEmail(req.email());
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/password-reset/send-code")
+    public ResponseEntity<Map<String, String>> sendResetCode(@Valid @RequestBody SendResetCodeRequest req) {
+        authService.sendResetCode(req.email());
+        return ResponseEntity.ok(Map.of("message", "인증 코드가 발송되었습니다."));
+    }
+
+    @PostMapping("/password-reset/verify-code")
+    public ResponseEntity<Map<String, Boolean>> verifyResetCode(@Valid @RequestBody VerifyResetCodeRequest req) {
+        authService.verifyResetCode(req.email(), req.code());
+        return ResponseEntity.ok(Map.of("verified", true));
+    }
+
+    @PostMapping("/password-reset/reset")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
+        authService.resetPassword(req.email(), req.code(), req.newPassword());
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/account")
     public ResponseEntity<Void> deleteAccount(@Valid @RequestBody DeleteAccountRequest req,
                                               Authentication authentication,

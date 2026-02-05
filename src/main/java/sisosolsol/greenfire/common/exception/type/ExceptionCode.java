@@ -45,6 +45,9 @@ public enum ExceptionCode {
 
     // 400 BAD REQUEST
     WEAK_PASSWORD(400, "비밀번호는 8자 이상, 대문자·소문자·숫자·특수문자를 각 1개 이상 포함해야 합니다."),
+    RESET_CODE_EXPIRED(400, "인증 코드가 만료되었습니다."),
+    RESET_CODE_INVALID(400, "유효하지 않은 인증 코드입니다."),
+    RESET_CODE_NOT_VERIFIED(400, "이메일 인증이 완료되지 않았습니다."),
     POST_TYPE_MISMATCH(400, "적합하지 않은 게시물 타입입니다."),
     FILE_SIZE_EXCEEDED(400, "파일 크기가 제한을 초과했습니다."),
     FILE_TYPE_NOT_ALLOWED(400, "허용되지 않은 파일 형식입니다."),
@@ -55,7 +58,8 @@ public enum ExceptionCode {
 
     // 500 Error
     DATABASE_ACCESS_ERROR(500, "데이터베이스 접근 중 오류가 발생했습니다."),
-    FILE_UPLOAD_ERROR(500, "파일 업로드 중 오류가 발생했습니다.");
+    FILE_UPLOAD_ERROR(500, "파일 업로드 중 오류가 발생했습니다."),
+    EMAIL_SEND_FAILED(500, "이메일 발송에 실패했습니다.");
 
 
     private final int code;
