@@ -5,7 +5,7 @@
 
 <mapper namespace="sisosolsol.greenfire.user.dao.UserMapper">
 
-    <resultMap id="userResultMap" type="sisosolsol.greenfire.user.dto.UserDTO">
+    <resultMap id="userResultMap" type="sisosolsol.greenfire.user.dto.User">
         <id property="userCode" column="user_code" typeHandler="sisosolsol.greenfire.common.handler.UUIDTypeHandler"/>
         <result property="nickname" column="nickname"/>
         <result property="name" column="name"/>
@@ -14,6 +14,7 @@
         <result property="gender" column="gender"/>
         <result property="phone" column="phone"/>
         <result property="status" column="status"/>
+        <result property="password" column="password"/>
     </resultMap>
 
     <select id="findByUserCode" resultMap="userResultMap">
@@ -22,10 +23,10 @@
             nickname,
             name,
             email,
-            birth,
-            gender,
-            phone,
-            status
+            birth
+<!--            gender,-->
+<!--            phone,-->
+<!--            status-->
         FROM
             users
         WHERE
@@ -34,13 +35,14 @@
 
     <update id="updateUserProfile">
         UPDATE
-            user
+            users
         SET
-            nickname = #{userDTO.nickname},
-            name = #{userDTO.name},
-            birth = #{userDTO.birth},
-            gender = #{userDTO.gender},
-            phone = #{userDTO.phone}
+            nickname = #{nickname},
+            name = #{name},
+            birth = #{birth},
+            profile_key = #{storageKey}
+<!--            gender = #{gender},-->
+<!--            phone = #{phone}-->
         WHERE
             user_code = #{userCode}
     </update>
@@ -82,4 +84,13 @@
         WHERE
             user_code = #{userCode}
     </select>
+
+    <update id="changePassword">
+        UPDATE
+            users
+        SET
+            password = #{password}
+        WHERE
+            user_code = #{userCode}
+    </update>
 </mapper>

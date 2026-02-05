@@ -1,26 +1,23 @@
 package sisosolsol.greenfire.user.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.Getter;
-import lombok.ToString;
-import sisosolsol.greenfire.common.enums.user.Gender;
-import sisosolsol.greenfire.common.enums.user.UserStatus;
-
 import java.time.LocalDate;
-import java.util.UUID;
 
-@Getter
-@ToString
-public class UserDTO {
-
-    private UUID userCode;
-    private String nickname;
-    private String name;
-    private String email;
+public record UserDTO(
+    String nickname,
+    String name,
+    String email,
     @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate birth;
-    private Gender gender;
-    private String phone;
-    private UserStatus status;
-
+    LocalDate birth,
+    String profileImage
+) {
+    public static UserDTO from(User user) {
+        return new UserDTO(
+            user.getNickname(),
+            user.getName(),
+            user.getEmail(),
+            user.getBirth(),
+            "/user/me/profile-image"
+        );
+    }
 }

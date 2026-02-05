@@ -1,16 +1,22 @@
 package sisosolsol.greenfire.user.controller;
 
 import jakarta.validation.Valid;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sisosolsol.greenfire.common.security.model.CustomUserDetails;
+import sisosolsol.greenfire.user.dto.PasswordChangeRequest;
+import sisosolsol.greenfire.user.dto.User;
+import sisosolsol.greenfire.user.dto.UpdateUserDTO;
 import sisosolsol.greenfire.user.dto.UserDTO;
-import sisosolsol.greenfire.user.dto.UserUpdateDTO;
 import sisosolsol.greenfire.user.service.UserService;
 
 @RestController
@@ -30,17 +36,37 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<UserDTO> getUserProfile(/*@AuthenticationPrincipal CustomUserDetails loginUser*/) {
 //        UserDTO userDTO = userService.getUserProfile();
-        UserDTO userDTO = userService.getUserProfile(TEST_USER_CODE);
-        return ResponseEntity.ok(userDTO);
+        User user = userService.getUserProfile(TEST_USER_CODE);
+        UserDTO dto = UserDTO.from(user);
+        return ResponseEntity.ok(dto);
     }
 
+    @GetMapping("/me/profile-image")
+    public ResponseEntity<Resource> getProfileImage(@AuthenticationPrincipal CustomUserDetails loginUser) {
+        Path filePath = Paths.get("/data/images/users", TEST_USER_CODE.toString(), "profile.jpg");
+        Resource resource = new FileSystemResource(filePath);
+
+        if (!resource.exists()) {
+            throw new IllegalArgumentException("이미지가 없습니다.");
+        }
+
+        return ResponseEntity.ok()
+            .contentType(MediaType.IMAGE_JPEG)
+            .body(resource);
+    }
 
     @PutMapping(value = "/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UserDTO> updateUserProfile(/*@AuthenticationPrincipal CustomUserDetails loginUser,*/
-        @RequestPart("data") @Valid UserUpdateDTO request,
+    public ResponseEntity<User> updateUserProfile(/*@AuthenticationPrincipal CustomUserDetails loginUser,*/
+        @RequestPart("data") @Valid UpdateUserDTO request,
         @RequestPart(value = "image", required = false) MultipartFile file) {
 //        UserDTO updatedProfile = userService.updateUserProfile(loginUser, request);
-        UserDTO updatedProfile = userService.updateUserProfile(TEST_USER_CODE, request);
+        User updatedProfile = userService.updateUserProfile(TEST_USER_CODE, request, file);
         return ResponseEntity.ok(updatedProfile);
+    }
+
+    @PutMapping("/me/password")
+    public ResponseEntity<Void> changePassword(@RequestBody @Valid PasswordChangeRequest request) {
+        userService.changePassword(TEST_USER_CODE, request);
+        return ResponseEntity.ok().build();
     }
 }
