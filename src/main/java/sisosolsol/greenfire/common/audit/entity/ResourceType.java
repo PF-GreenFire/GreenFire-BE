@@ -8,5 +8,6 @@ public enum ResourceType {
     POST,           // 피드 게시글
     COMMENT,        // 댓글
     CHALLENGE,      // 챌린지
-    USER            // 유저 (팔로우/언팔로우 대상)
+    USER,           // 유저 (팔로우/언팔로우 대상)
+    REPORT          // 신고
 }

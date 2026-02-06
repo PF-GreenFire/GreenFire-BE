@@ -23,6 +23,7 @@ public enum ExceptionCode {
     // 403 Error
     ACCESS_DENIED(403, "허가 되지 않은 요청입니다."),
     ACCOUNT_DELETED(403, "탈퇴한 계정입니다."),
+    ACCOUNT_SUSPENDED(403, "정지된 계정입니다."),
 
     // 404 Error
     USER_NOT_FOUND(404, "사용자를 찾을 수 없습니다."),
@@ -51,10 +52,24 @@ public enum ExceptionCode {
     POST_TYPE_MISMATCH(400, "적합하지 않은 게시물 타입입니다."),
     FILE_SIZE_EXCEEDED(400, "파일 크기가 제한을 초과했습니다."),
     FILE_TYPE_NOT_ALLOWED(400, "허용되지 않은 파일 형식입니다."),
+    CANNOT_CHANGE_OWN_ROLE(400, "본인의 역할은 변경할 수 없습니다."),
+    INVALID_ROLE(400, "유효하지 않은 역할입니다."),
+    CANNOT_SUSPEND_ADMIN(400, "관리자 계정은 정지할 수 없습니다."),
+    CANNOT_SUSPEND_SELF(400, "본인 계정은 정지할 수 없습니다."),
     FILE_NOT_FOUND(404, "파일을 찾을 수 없습니다."),
 
     InvalidForeignKeyException(1100, "외래 키 제약을 위반한 요청입니다."),
     INVALID_FOREIGN_KEY(409, "외래 키 제약을 위반한 요청입니다."),
+    DUPLICATE_REPORT(409, "이미 신고한 콘텐츠입니다."),
+    REPORT_ALREADY_HANDLED(409, "이미 처리된 신고입니다."),
+
+    // 404 Error - Report
+    REPORT_NOT_FOUND(404, "신고를 찾을 수 없습니다."),
+
+    // 400 Error - Report
+    INVALID_RESOURCE_TYPE(400, "유효하지 않은 리소스 타입입니다."),
+    INVALID_REPORT_CATEGORY(400, "유효하지 않은 신고 카테고리입니다."),
+    INVALID_REPORT_STATUS(400, "유효하지 않은 신고 상태입니다."),
 
     // 500 Error
     DATABASE_ACCESS_ERROR(500, "데이터베이스 접근 중 오류가 발생했습니다."),
