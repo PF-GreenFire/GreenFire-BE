@@ -35,4 +35,9 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
      * 특정 상태의 신고 건수 (대시보드용)
      */
     long countByStatus(ReportStatus status);
+
+    /**
+     * 특정 상태가 아닌 신고 건수 (처리된 신고 건수)
+     */
+    long countByStatusNot(ReportStatus status);
 }
