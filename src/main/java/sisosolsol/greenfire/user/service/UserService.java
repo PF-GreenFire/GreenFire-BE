@@ -1,44 +1,36 @@
 package sisosolsol.greenfire.user.service;
 
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 import sisosolsol.greenfire.challenge.model.dto.ChallengeDTO;
-import sisosolsol.greenfire.common.config.UploadAllowConfig;
-import sisosolsol.greenfire.common.exception.BadRequestException;
 import sisosolsol.greenfire.common.exception.type.ExceptionCode;
 import sisosolsol.greenfire.user.dao.UserMapper;
 import sisosolsol.greenfire.user.dto.ChallengeSummaryDTO;
 import sisosolsol.greenfire.user.dto.PasswordChangeRequest;
+import sisosolsol.greenfire.user.dto.FileStorage;
 import sisosolsol.greenfire.user.dto.ScrapbookSummaryDTO;
 import sisosolsol.greenfire.user.dto.UpdateUserCommand;
 import sisosolsol.greenfire.user.dto.User;
 import sisosolsol.greenfire.user.dto.UserProfileDTO;
 import sisosolsol.greenfire.user.dto.UpdateUserDTO;
 
-import java.util.Optional;
-import sisosolsol.greenfire.user.exception.InvalidPasswordException;
 import sisosolsol.greenfire.user.exception.UserNotFoundException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
-    private final UploadAllowConfig config;
-    private static final String FIXED_FILENAME = "profile.jpg";
+    private final FileStorage fileStorage;
     private final PasswordEncoder passwordEncoder;
-
     private final UserMapper userMapper;
 
     public User getUserProfile(UUID userCode) {
@@ -53,31 +45,52 @@ public class UserService {
         return userMapper.findByUserCode(userCode);
     }
 
+    /**
+     * TODO
+     * 1. 프로필 이미지 지우기 일 때
+     *  - DB에 profile_key를 null이나 빈 값으로 업데이트 하고 파일 삭제
+     * 2. 프로필 이미지 아닌 다른거 업데이트
+     *  - DB에 profile_key는 업데이트 X
+     * 3. 프로필 이미지 업데이트
+     *  - DB에 profile_key 업데이트 O
+     *
+     *  Transactional 쓸거면 DB 먼저 타고 파일 삭제 ㄱㄱ
+     */
     @Transactional
     public User updateUserProfile(UUID userCode, UpdateUserDTO request, MultipartFile file) {
-        User user = Optional.ofNullable(userMapper.findByUserCode(userCode))
-                .orElseThrow(() -> new BadRequestException(ExceptionCode.USER_NOT_FOUND));
+        // 1. 프로필 이미지 처리 (storageKey 결정 + 파일 저장)
+        String storageKey = resolveProfileImageKey(request, file, userCode);
 
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("저장할 이미지 파일이 없습니다.");
+        // 2. DB 업데이트
+        UpdateUserCommand command = UpdateUserCommand.of(userCode, request, storageKey);
+        userMapper.updateUserProfile(command);
+
+        // 3. 이미지 삭제 요청인 경우, 트랜잭션 커밋 후 파일 삭제
+        if (request.isDeleteProfileImage()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    fileStorage.delete("users/" + userCode + "/profile.jpg");
+                }
+            });
         }
-
-        String storageKey = buildStorageKey(userCode);
-        Path savePath = resolveAbsolutePath(storageKey);
-        Path saveDirectory = savePath.getParent();
-
-        try (InputStream is = file.getInputStream()) {
-            Files.createDirectories(saveDirectory);
-            Files.copy(is, savePath, StandardCopyOption.REPLACE_EXISTING);
-        }
-         catch (Exception e) {
-            throw new RuntimeException("Failed to create user image directory: " + saveDirectory, e);
-        }
-
-        UpdateUserCommand updateUserCommand = UpdateUserCommand.of(request, storageKey);
-        userMapper.updateUserProfile(updateUserCommand);
-
         return userMapper.findByUserCode(userCode);
+    }
+
+    /**
+     * 프로필 이미지 storageKey를 결정합니다.
+     * - null  : 이미지 변경 없음 (기존 유지)
+     * - ""    : 이미지 삭제 요청
+     * - 그 외 : 새 이미지 업로드 경로
+     */
+    private String resolveProfileImageKey(UpdateUserDTO request, MultipartFile file, UUID userCode) {
+        if (request.isDeleteProfileImage()) {
+            return "";
+        }
+        if (file != null && !file.isEmpty()) {
+            return fileStorage.save("users/" + userCode + "/profile.jpg", file);
+        }
+        return null;
     }
 
     public UserProfileDTO getUserSummaryData(UUID userCode) {
@@ -117,16 +130,7 @@ public class UserService {
         userMapper.changePassword(userCode, passwordEncoder.encode(request.newPassword()));
     }
 
-    public String buildStorageKey(UUID userCode) {
-        return "users/" + userCode + "/" + FIXED_FILENAME;
-    }
-
-    public Path resolveAbsolutePath(String storageKey) {
-        Path root = Paths.get(config.getDirectory()).toAbsolutePath().normalize();
-        Path resolved = root.resolve(storageKey).normalize();
-        if (!resolved.startsWith(root)) {
-            throw new IllegalArgumentException("잘못된 저장 경로입니다.");
-        }
-        return resolved;
+    public void deleteUser(UUID testUserCode) {
+        userMapper.deleteUser(testUserCode);
     }
 }

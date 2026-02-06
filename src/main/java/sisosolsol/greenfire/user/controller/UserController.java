@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import sisosolsol.greenfire.common.config.UploadAllowConfig;
 import sisosolsol.greenfire.common.security.model.CustomUserDetails;
 import sisosolsol.greenfire.user.dto.PasswordChangeRequest;
 import sisosolsol.greenfire.user.dto.User;
@@ -24,6 +25,7 @@ import sisosolsol.greenfire.user.service.UserService;
 @RequestMapping("/user")
 public class UserController {
 
+    private final UploadAllowConfig uploadAllowConfig;
     private final UserService userService;
     private static final UUID TEST_USER_CODE = UUID.fromString("dc31ee31-5f6f-4538-893a-462fabec8fef");
 
@@ -34,20 +36,20 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserDTO> getUserProfile(/*@AuthenticationPrincipal CustomUserDetails loginUser*/) {
+    public ResponseEntity<User> getUserProfile(/*@AuthenticationPrincipal CustomUserDetails loginUser*/) {
 //        UserDTO userDTO = userService.getUserProfile();
         User user = userService.getUserProfile(TEST_USER_CODE);
-        UserDTO dto = UserDTO.from(user);
-        return ResponseEntity.ok(dto);
+//        UserDTO dto = UserDTO.from(user);
+        return ResponseEntity.ok(user);
     }
 
     @GetMapping("/me/profile-image")
     public ResponseEntity<Resource> getProfileImage(@AuthenticationPrincipal CustomUserDetails loginUser) {
-        Path filePath = Paths.get("/data/images/users", TEST_USER_CODE.toString(), "profile.jpg");
+        Path filePath = Paths.get(uploadAllowConfig.getDirectory(), TEST_USER_CODE.toString(), "profile.jpg");
         Resource resource = new FileSystemResource(filePath);
 
         if (!resource.exists()) {
-            throw new IllegalArgumentException("이미지가 없습니다.");
+            throw new IllegalArgumentException("등록된 이미지가 없습니다.");
         }
 
         return ResponseEntity.ok()
@@ -67,6 +69,12 @@ public class UserController {
     @PutMapping("/me/password")
     public ResponseEntity<Void> changePassword(@RequestBody @Valid PasswordChangeRequest request) {
         userService.changePassword(TEST_USER_CODE, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteUser() {
+        userService.deleteUser(TEST_USER_CODE);
         return ResponseEntity.ok().build();
     }
 }

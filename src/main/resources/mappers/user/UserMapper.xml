@@ -15,6 +15,7 @@
         <result property="phone" column="phone"/>
         <result property="status" column="status"/>
         <result property="password" column="password"/>
+        <result property="profileImage" column="profile_key"/>
     </resultMap>
 
     <select id="findByUserCode" resultMap="userResultMap">
@@ -23,9 +24,11 @@
             nickname,
             name,
             email,
-            birth
+            birth,
+            password,
+            phone,
+            profile_key
 <!--            gender,-->
-<!--            phone,-->
 <!--            status-->
         FROM
             users
@@ -33,16 +36,19 @@
             user_code = #{userCode}
     </select>
 
-    <update id="updateUserProfile">
+<!--    <update id="updateUserProfile">-->
+    <update id="updateUserProfile" parameterType="sisosolsol.greenfire.user.dto.UpdateUserCommand">
         UPDATE
             users
         SET
+        <if test="storageKey != null">
+            profile_key = #{storageKey},
+        </if>
             nickname = #{nickname},
             name = #{name},
             birth = #{birth},
-            profile_key = #{storageKey}
-<!--            gender = #{gender},-->
-<!--            phone = #{phone}-->
+            email = #{email},
+            phone = #{phone}
         WHERE
             user_code = #{userCode}
     </update>
@@ -90,6 +96,15 @@
             users
         SET
             password = #{password}
+        WHERE
+            user_code = #{userCode}
+    </update>
+
+    <update id="deleteUser">
+        UPDATE
+            users
+        SET
+            status = 'WITHDRAWAL'
         WHERE
             user_code = #{userCode}
     </update>

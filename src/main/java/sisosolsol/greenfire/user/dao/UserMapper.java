@@ -27,4 +27,6 @@ public interface UserMapper {
     int countParticipatingChallenge(UUID userCode);
 
     void changePassword(@Param("userCode") UUID userCode, @Param("password") String password);
+
+    void deleteUser(@Param("userCode") UUID testUserCode);
 }
