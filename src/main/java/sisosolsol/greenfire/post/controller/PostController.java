@@ -3,9 +3,9 @@ package sisosolsol.greenfire.post.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import sisosolsol.greenfire.common.security.model.CustomUserDetails;
+import sisosolsol.greenfire.common.security.model.AuthUser;
 import sisosolsol.greenfire.post.model.dto.PostCreateDTO;
 import sisosolsol.greenfire.post.model.dto.PostDTO;
 import sisosolsol.greenfire.post.model.dto.PostUpdateDTO;
@@ -37,8 +37,9 @@ public class PostController {
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/challenge")
     public ResponseEntity<Void> createChallengePost(@RequestBody PostCreateDTO post,
-                                                    @AuthenticationPrincipal CustomUserDetails user) {
-        int postCode = postService.registChallengePost(post, user.getId());
+                                                    Authentication authentication) {
+        AuthUser currentUser = (AuthUser) authentication.getPrincipal();
+        int postCode = postService.registChallengePost(post, currentUser.userId());
         return ResponseEntity.created(URI.create("post/" + postCode)).build();
     }
 
@@ -46,16 +47,18 @@ public class PostController {
     @PutMapping("/{postCode}")
     public ResponseEntity<PostUpdateDTO> updatePost(@PathVariable Integer postCode,
                                                     @RequestBody PostUpdateDTO post,
-                                                    @AuthenticationPrincipal CustomUserDetails user) {
-        postService.updatePost(postCode, user, post);
+                                                    Authentication authentication) {
+        AuthUser currentUser = (AuthUser) authentication.getPrincipal();
+        postService.updatePost(postCode, currentUser, post);
         return ResponseEntity.ok(post);
     }
 
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{postCode}")
     public ResponseEntity<Void> deletePost(@PathVariable Integer postCode,
-                                           @AuthenticationPrincipal CustomUserDetails user) {
-        postService.deletePost(postCode, user);
+                                           Authentication authentication) {
+        AuthUser currentUser = (AuthUser) authentication.getPrincipal();
+        postService.deletePost(postCode, currentUser);
         return ResponseEntity.noContent().build();
     }
 }

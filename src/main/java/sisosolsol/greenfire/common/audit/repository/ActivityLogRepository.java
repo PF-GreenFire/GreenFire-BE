@@ -17,6 +17,9 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
     /** 특정 유저의 전체 활동 이력 (신고 조사 시) */
     List<ActivityLog> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
+    /** 특정 유저의 최근 활동 이력 (페이징) */
+    List<ActivityLog> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
+
     /** 특정 유저의 특정 리소스 타입 활동 (예: 유저의 모든 댓글 이력) */
     List<ActivityLog> findByUserIdAndResourceTypeOrderByCreatedAtDesc(UUID userId, ResourceType resourceType);
 
@@ -34,4 +37,11 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
 
     /** 특정 유저의 기간별 활동 횟수 (활동량 집계) */
     long countByUserIdAndCreatedAtAfter(UUID userId, Instant since);
+
+    /** 전체 기간별 활동 횟수 (대시보드 집계) */
+    long countByCreatedAtAfter(Instant since);
+
+    /** 특정 유저의 최근 활동 이력 — 특정 ActionType 제외 (관리자 회원 상세) */
+    List<ActivityLog> findByUserIdAndActionTypeNotInOrderByCreatedAtDesc(
+            UUID userId, List<ActionType> excludedTypes, Pageable pageable);
 }

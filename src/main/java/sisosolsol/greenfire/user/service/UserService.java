@@ -7,12 +7,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sisosolsol.greenfire.common.exception.BadRequestException;
 import sisosolsol.greenfire.common.exception.type.ExceptionCode;
-import sisosolsol.greenfire.common.security.model.CustomUserDetails;
 import sisosolsol.greenfire.user.model.dao.UserMapper;
 import sisosolsol.greenfire.user.model.dto.UserDTO;
 import sisosolsol.greenfire.user.model.dto.UserUpdateDTO;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -20,9 +20,9 @@ public class UserService {
 
     private final UserMapper userMapper;
 
-    public UserDTO getUserProfile(CustomUserDetails loginUser) {
+    public UserDTO getUserProfile(UUID userId) {
         try {
-            return Optional.ofNullable(userMapper.findByUserCode(loginUser.getId()))
+            return Optional.ofNullable(userMapper.findByUserCode(userId))
                     .orElseThrow(() -> new BadRequestException(ExceptionCode.USER_NOT_FOUND));
         } catch (DataIntegrityViolationException e) {
             throw new BadRequestException(ExceptionCode.INVALID_FOREIGN_KEY);
@@ -32,14 +32,14 @@ public class UserService {
     }
 
     @Transactional
-    public UserDTO updateUserProfile(CustomUserDetails loginUser, UserUpdateDTO request) {
+    public UserDTO updateUserProfile(UUID userId, UserUpdateDTO request) {
         try {
-            UserDTO user = Optional.ofNullable(userMapper.findByUserCode(loginUser.getId()))
+            Optional.ofNullable(userMapper.findByUserCode(userId))
                     .orElseThrow(() -> new BadRequestException(ExceptionCode.USER_NOT_FOUND));
 
-            userMapper.updateUserProfile(loginUser.getId(), request);
+            userMapper.updateUserProfile(userId, request);
 
-            return userMapper.findByUserCode(loginUser.getId());
+            return userMapper.findByUserCode(userId);
         } catch (DataIntegrityViolationException e) {
             throw new BadRequestException(ExceptionCode.INVALID_FOREIGN_KEY);
         } catch (DataAccessException e) {

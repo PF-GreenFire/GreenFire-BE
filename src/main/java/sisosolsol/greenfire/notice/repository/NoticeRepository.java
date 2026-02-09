@@ -70,4 +70,6 @@ public interface NoticeRepository extends JpaRepository<Notice, Integer> {
             @Param("createdAt") java.time.LocalDateTime createdAt,
             Pageable pageable
     );
+
+    long countByNoticeStatus(NoticeStatus status);
 }

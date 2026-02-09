@@ -32,5 +32,9 @@ public enum ActionType {
     COMPLETE,
 
     // 신고
-    REPORT
+    REPORT,
+
+    // 관리자 조치
+    SUSPEND,
+    UNSUSPEND
 }

@@ -1,14 +1,15 @@
 package sisosolsol.greenfire.notice.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import sisosolsol.greenfire.common.security.model.CustomUserDetails;
+import sisosolsol.greenfire.common.security.model.AuthUser;
 import sisosolsol.greenfire.notice.dto.request.NoticeCreateRequest;
 import sisosolsol.greenfire.notice.dto.request.NoticeUpdateRequest;
 import sisosolsol.greenfire.notice.dto.response.NoticeDetailResponse;
@@ -60,22 +61,49 @@ public class NoticeController {
     /**
      * 조회수 증가
      * POST /api/v1/notices/{noticeCode}/view
+     * - 로그인 사용자: userCode 기반 중복 방지
+     * - 비로그인 사용자: IP 기반 중복 방지
      */
     @PostMapping("/{noticeCode}/view")
     public ResponseEntity<Map<String, Object>> incrementViewCount(
             @PathVariable Integer noticeCode,
-            @RequestBody Map<String, String> request
+            @RequestBody(required = false) Map<String, String> request,
+            HttpServletRequest httpRequest
     ) {
-        UUID userCode = request.get("userCode") != null
+        UUID userCode = (request != null && request.get("userCode") != null)
                 ? UUID.fromString(request.get("userCode"))
                 : null;
 
-        noticeService.incrementViewCount(noticeCode, userCode);
+        String ipAddress = getClientIpAddress(httpRequest);
+
+        noticeService.incrementViewCount(noticeCode, userCode, ipAddress);
 
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "조회수가 증가되었습니다."
         ));
+    }
+
+    /**
+     * 클라이언트 IP 주소 추출 (프록시 환경 고려)
+     */
+    private String getClientIpAddress(HttpServletRequest request) {
+        String[] headerNames = {
+                "X-Forwarded-For",
+                "X-Real-IP",
+                "Proxy-Client-IP",
+                "WL-Proxy-Client-IP"
+        };
+
+        for (String header : headerNames) {
+            String ip = request.getHeader(header);
+            if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+                // X-Forwarded-For는 콤마로 구분된 IP 목록일 수 있음
+                return ip.split(",")[0].trim();
+            }
+        }
+
+        return request.getRemoteAddr();
     }
 
     /**
@@ -110,9 +138,12 @@ public class NoticeController {
     public ResponseEntity<Map<String, Object>> createNotice(
             @Valid @RequestPart("notice") NoticeCreateRequest request,
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
-            @AuthenticationPrincipal CustomUserDetails user
+            Authentication authentication,
+            HttpServletRequest httpRequest
     ) {
-        Integer noticeCode = noticeService.createNotice(request, user.getId(), files);
+        AuthUser currentUser = (AuthUser) authentication.getPrincipal();
+        Integer noticeCode = noticeService.createNotice(
+                request, currentUser.userId(), files, httpRequest.getRemoteAddr());
 
         return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -130,9 +161,13 @@ public class NoticeController {
     public ResponseEntity<Map<String, Object>> updateNotice(
             @PathVariable Integer noticeCode,
             @Valid @RequestPart("notice") NoticeUpdateRequest request,
-            @RequestPart(value = "files", required = false) List<MultipartFile> files
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            Authentication authentication,
+            HttpServletRequest httpRequest
     ) {
-        noticeService.updateNotice(noticeCode, request, files);
+        AuthUser currentUser = (AuthUser) authentication.getPrincipal();
+        noticeService.updateNotice(noticeCode, request, files,
+                currentUser.userId(), httpRequest.getRemoteAddr());
 
         return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -147,9 +182,12 @@ public class NoticeController {
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{noticeCode}")
     public ResponseEntity<Map<String, Object>> deleteNotice(
-            @PathVariable Integer noticeCode
+            @PathVariable Integer noticeCode,
+            Authentication authentication,
+            HttpServletRequest httpRequest
     ) {
-        noticeService.deleteNotice(noticeCode);
+        AuthUser currentUser = (AuthUser) authentication.getPrincipal();
+        noticeService.deleteNotice(noticeCode, currentUser.userId(), httpRequest.getRemoteAddr());
 
         return ResponseEntity.ok(Map.of(
                 "success", true,

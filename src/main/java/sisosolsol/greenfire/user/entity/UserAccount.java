@@ -35,6 +35,12 @@ public class UserAccount {
     @Column(name = "delete_reason")
     private String deleteReason;
 
+    @Column(name = "suspended_until")
+    private Instant suspendedUntil;
+
+    @Column(name = "suspend_reason")
+    private String suspendReason;
+
     public UserAccount(String email, String passwordHash, UserRole role) {
         this.email = email;
         this.passwordHash = passwordHash;
@@ -45,6 +51,10 @@ public class UserAccount {
         this.passwordHash = newPasswordHash;
     }
 
+    public void updateRole(UserRole newRole) {
+        this.role = newRole;
+    }
+
     public void markDeleted(String reason) {
         this.deletedAt = Instant.now();
         this.deleteReason = reason;
@@ -52,5 +62,19 @@ public class UserAccount {
 
     public boolean isDeleted() {
         return this.deletedAt != null;
+    }
+
+    public void suspend(Instant until, String reason) {
+        this.suspendedUntil = until;
+        this.suspendReason = reason;
+    }
+
+    public void unsuspend() {
+        this.suspendedUntil = null;
+        this.suspendReason = null;
+    }
+
+    public boolean isSuspended() {
+        return this.suspendedUntil != null && Instant.now().isBefore(this.suspendedUntil);
     }
 }

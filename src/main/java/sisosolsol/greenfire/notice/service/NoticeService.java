@@ -7,6 +7,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import sisosolsol.greenfire.common.audit.entity.ActionType;
+import sisosolsol.greenfire.common.audit.entity.ResourceType;
+import sisosolsol.greenfire.common.audit.service.ActivityLogService;
 import sisosolsol.greenfire.common.enums.image.ImageType;
 import sisosolsol.greenfire.common.exception.CustomException;
 import sisosolsol.greenfire.common.exception.type.ExceptionCode;
@@ -24,6 +27,7 @@ import sisosolsol.greenfire.notice.enums.NoticeStatus;
 import sisosolsol.greenfire.notice.repository.NoticeRepository;
 import sisosolsol.greenfire.notice.repository.NoticeViewRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -35,7 +39,8 @@ public class NoticeService {
 
     private final NoticeRepository noticeRepository;
     private final NoticeViewRepository noticeViewRepository;
-    private final ImageService imageService;  // ⭐ ImageService 추가
+    private final ImageService imageService;
+    private final ActivityLogService activityLogService;
 
     /**
      * 공지사항 목록 조회 (페이징, 필터링, 검색)
@@ -103,28 +108,41 @@ public class NoticeService {
         return NoticeDetailResponse.from(notice, authorName, isViewed, images, prevNotice, nextNotice);
     }
 
+    private static final int VIEW_DUPLICATE_HOURS = 24;
+
     /**
-     * 조회수 증가 (중복 방지)
+     * 조회수 증가 (24시간 내 중복 방지)
+     * - 로그인 사용자: userCode 기반
+     * - 비로그인 사용자: IP 기반
      */
     @Transactional
-    public void incrementViewCount(Integer noticeCode, UUID userCode) {
-        if (userCode == null) {
-            return; // 비로그인 사용자는 조회수 증가 안함
-        }
-
+    public void incrementViewCount(Integer noticeCode, UUID userCode, String ipAddress) {
         Notice notice = noticeRepository.findById(noticeCode)
                 .orElseThrow(() -> new CustomException(ExceptionCode.NOTICE_NOT_FOUND));
 
-        // 중복 조회 체크
-        if (noticeViewRepository.existsByNotice_NoticeCodeAndUserCode(noticeCode, userCode)) {
-            return; // 이미 조회한 사용자
+        LocalDateTime since = LocalDateTime.now().minusHours(VIEW_DUPLICATE_HOURS);
+
+        // 24시간 내 중복 조회 체크
+        boolean alreadyViewed;
+        NoticeView noticeView;
+
+        if (userCode != null) {
+            // 로그인 사용자: userCode 기반 체크
+            alreadyViewed = noticeViewRepository.existsByNoticeCodeAndUserCodeSince(
+                    noticeCode, userCode, since);
+            noticeView = NoticeView.ofUser(notice, userCode, ipAddress);
+        } else {
+            // 비로그인 사용자: IP 기반 체크
+            alreadyViewed = noticeViewRepository.existsByNoticeCodeAndIpAddressSince(
+                    noticeCode, ipAddress, since);
+            noticeView = NoticeView.ofGuest(notice, ipAddress);
+        }
+
+        if (alreadyViewed) {
+            return; // 24시간 내 이미 조회함
         }
 
         // 조회 기록 저장
-        NoticeView noticeView = NoticeView.builder()
-                .notice(notice)
-                .userCode(userCode)
-                .build();
         noticeViewRepository.save(noticeView);
 
         // 조회수 증가
@@ -174,8 +192,7 @@ public class NoticeService {
      */
     @Transactional
     public Integer createNotice(NoticeCreateRequest request, UUID authorUserCode,
-                                List<MultipartFile> files) {
-        // 1. Notice 저장
+                                List<MultipartFile> files, String ipAddress) {
         Notice notice = Notice.builder()
                 .noticeTitle(request.getNoticeTitle())
                 .noticeContent(request.getNoticeContent())
@@ -189,10 +206,12 @@ public class NoticeService {
 
         Notice savedNotice = noticeRepository.save(notice);
 
-        // 2. ⭐ 이미지 저장 (ImageService 활용)
         if (files != null && !files.isEmpty()) {
             imageService.saveImages(ImageType.NOTICE, savedNotice.getNoticeCode(), files);
         }
+
+        activityLogService.log(authorUserCode, ActionType.CREATE, ResourceType.NOTICE,
+                savedNotice.getNoticeCode().toString(), request.getNoticeTitle(), ipAddress);
 
         return savedNotice.getNoticeCode();
     }
@@ -202,11 +221,10 @@ public class NoticeService {
      */
     @Transactional
     public void updateNotice(Integer noticeCode, NoticeUpdateRequest request,
-                             List<MultipartFile> files) {
+                             List<MultipartFile> files, UUID userId, String ipAddress) {
         Notice notice = noticeRepository.findById(noticeCode)
                 .orElseThrow(() -> new CustomException(ExceptionCode.NOTICE_NOT_FOUND));
 
-        // 1. Notice 수정
         notice.updateNotice(
                 request.getNoticeTitle(),
                 request.getNoticeContent(),
@@ -217,25 +235,28 @@ public class NoticeService {
                 request.getEndDate()
         );
 
-        // 2. ⭐ 기존 이미지 삭제 후 새로 등록
         if (files != null && !files.isEmpty()) {
             imageService.deleteAllImages(ImageType.NOTICE, noticeCode);
             imageService.saveImages(ImageType.NOTICE, noticeCode, files);
         }
+
+        activityLogService.log(userId, ActionType.UPDATE, ResourceType.NOTICE,
+                noticeCode.toString(), request.getNoticeTitle(), ipAddress);
     }
 
     /**
      * 공지사항 삭제 (소프트 삭제)
      */
     @Transactional
-    public void deleteNotice(Integer noticeCode) {
+    public void deleteNotice(Integer noticeCode, UUID userId, String ipAddress) {
         Notice notice = noticeRepository.findById(noticeCode)
                 .orElseThrow(() -> new CustomException(ExceptionCode.NOTICE_NOT_FOUND));
 
-        // 1. Notice 소프트 삭제
+        String snapshot = notice.getNoticeTitle();
         notice.delete();
-
-        // 2. ⭐ 이미지 삭제 (파일 + DB)
         imageService.deleteAllImages(ImageType.NOTICE, noticeCode);
+
+        activityLogService.log(userId, ActionType.DELETE, ResourceType.NOTICE,
+                noticeCode.toString(), snapshot, ipAddress);
     }
 }

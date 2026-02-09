@@ -95,6 +95,21 @@ public class AuthService {
             throw new BadCredentialsException("탈퇴한 계정입니다. 다시 가입해 주세요.");
         }
 
+        // 정지 계정 로그인 차단
+        if (user.isSuspended()) {
+            String msg = "정지된 계정입니다.";
+            if (user.getSuspendReason() != null) {
+                msg += " 사유: " + user.getSuspendReason();
+            }
+            Instant permanentThreshold = Instant.parse("9999-01-01T00:00:00Z");
+            if (user.getSuspendedUntil() != null && user.getSuspendedUntil().isBefore(permanentThreshold)) {
+                msg += " (해제일: " + user.getSuspendedUntil() + ")";
+            } else {
+                msg += " (영구 정지)";
+            }
+            throw new BadCredentialsException(msg);
+        }
+
         if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
             throw new BadCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
@@ -144,6 +159,12 @@ public class AuthService {
         // 유저 조회 → 새 토큰 쌍 발급
         UserAccount user = userAccountRepository.findById(stored.getUserId())
                 .orElseThrow(() -> new BadCredentialsException("사용자를 찾을 수 없습니다."));
+
+        // 정지 계정 토큰 갱신 차단
+        if (user.isSuspended()) {
+            refreshTokenRepository.revokeAllByUserId(user.getId());
+            throw new BadCredentialsException("정지된 계정입니다.");
+        }
 
         String newAccessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name());
         long expiresIn = jwtUtil.getAccessExpSeconds();
