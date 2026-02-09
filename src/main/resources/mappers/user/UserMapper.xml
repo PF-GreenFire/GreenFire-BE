@@ -18,6 +18,16 @@
         <result property="profileImage" column="profile_key"/>
     </resultMap>
 
+    <select id="findUserSummary" resultMap="userResultMap">
+        SELECT
+            nickname,
+            profile_key
+        FROM
+            users
+        WHERE
+            user_code = #{userCode}
+    </select>
+
     <select id="findByUserCode" resultMap="userResultMap">
         SELECT
             user_code,
@@ -108,4 +118,21 @@
         WHERE
             user_code = #{userCode}
     </update>
+
+    <insert id="followUser">
+        INSERT INTO
+            user_follow (user_code, target_user)
+        VALUES
+            (#{userCode}, #{targetUser})
+    </insert>
+
+    <delete id="deleteFollow">
+        DELETE
+        FROM
+            user_follow
+        WHERE
+            user_code = #{userCode}
+        AND
+            target_user = #{targetUser}
+    </delete>
 </mapper>

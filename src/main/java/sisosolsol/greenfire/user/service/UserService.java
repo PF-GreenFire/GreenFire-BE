@@ -96,14 +96,17 @@ public class UserService {
     public UserProfileDTO getUserSummaryData(UUID userCode) {
         ScrapbookSummaryDTO scrapbookSummary = userMapper.getScrapbookSummary(userCode);
 
-        int challengeTotalCount = userMapper.countParticipatingChallenge(userCode);
+        int challengeCount = userMapper.countParticipatingChallenge(userCode);
         List<ChallengeDTO> challenges = userMapper.getChallengeSummary(userCode);
+
         ChallengeSummaryDTO challengeSummary = ChallengeSummaryDTO.builder()
-                                                                .totalCount(challengeTotalCount)
+                                                                .totalCount(challengeCount)
                                                                 .challenges(challenges)
                                                                 .build();
 
+        User user = userMapper.findUserSummary(userCode);
         UserProfileDTO userProfileDTO = UserProfileDTO.builder()
+                                                    .user(user)
                                                     .scrapbookSummary(scrapbookSummary)
                                                     .challengeSummary(challengeSummary)
                                                     .build();
@@ -132,5 +135,13 @@ public class UserService {
 
     public void deleteUser(UUID testUserCode) {
         userMapper.deleteUser(testUserCode);
+    }
+
+    public void followUser(UUID userCode, UUID targetUser) {
+        userMapper.followUser(userCode, targetUser);
+    }
+
+    public void deleteFollow(UUID userCode, UUID targetUser) {
+        userMapper.deleteFollow(userCode, targetUser);
     }
 }

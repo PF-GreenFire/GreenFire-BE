@@ -14,6 +14,8 @@ import java.util.UUID;
 @Mapper
 public interface UserMapper {
 
+    User findUserSummary(@Param("userCode") UUID userCode);
+
     // 회원 프로필 정보 조회
     User findByUserCode(@Param("userCode") UUID userCode);
 
@@ -29,4 +31,9 @@ public interface UserMapper {
     void changePassword(@Param("userCode") UUID userCode, @Param("password") String password);
 
     void deleteUser(@Param("userCode") UUID testUserCode);
+
+    void followUser(@Param("userCode") UUID userCode, @Param("targetUser") UUID targetUser);
+
+    void deleteFollow(@Param("userCode") UUID userCode, @Param("targetUser") UUID targetUser);
+
 }

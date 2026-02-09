@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import sisosolsol.greenfire.challenge.model.dto.ChallengeDTO;
 import sisosolsol.greenfire.common.config.UploadAllowConfig;
 import sisosolsol.greenfire.common.security.model.CustomUserDetails;
 import sisosolsol.greenfire.user.dto.PasswordChangeRequest;
@@ -75,6 +76,19 @@ public class UserController {
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteUser() {
         userService.deleteUser(TEST_USER_CODE);
+        return ResponseEntity.ok().build();
+    }
+
+
+    @PostMapping("/follows/{targetCode}")
+    public ResponseEntity<Void> followUser(@PathVariable("targetCode") String targetUser) {
+        userService.followUser(TEST_USER_CODE, UUID.fromString(targetUser));
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/follows/{targetCode}")
+    public ResponseEntity<Void> deleteUSer(@PathVariable("targetCode") String targetUser) {
+        userService.deleteFollow(TEST_USER_CODE, UUID.fromString(targetUser));
         return ResponseEntity.ok().build();
     }
 }
