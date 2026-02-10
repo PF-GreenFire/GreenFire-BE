@@ -8,62 +8,101 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
-import sisosolsol.greenfire.common.security.model.CustomUserDetails;
-import sisosolsol.greenfire.common.security.model.SupabaseUserDTO;
 
-import java.util.Map;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Date;
+import java.util.HexFormat;
 import java.util.UUID;
 
 @Component
 @Slf4j
 public class JwtUtil {
-    private final String secret;
 
-    public JwtUtil(@Value("${supabase.jwt.secret}") String secret) {
-        this.secret = secret;
+    private final SecretKey key;
+    private final long accessExpMillis;
+    private final long refreshExpMillis;
+
+    public JwtUtil(
+            @Value("${spring.jwt.secret}") String secret,
+            @Value("${spring.jwt.access-exp-min}") long accessExpMin,
+            @Value("${spring.jwt.refresh-exp-min:20160}") long refreshExpMin
+    ) {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.accessExpMillis = accessExpMin * 60_000L;
+        this.refreshExpMillis = refreshExpMin * 60_000L;
+    }
+
+    public long getAccessExpSeconds() {
+        return accessExpMillis / 1000L;
+    }
+
+    public long getRefreshExpSeconds() {
+        return refreshExpMillis / 1000L;
+    }
+
+    public long getRefreshExpMillis() {
+        return refreshExpMillis;
+    }
+
+    public String generateAccessToken(UUID userId, String email, String role) {
+        Date now = new Date();
+        Date exp = new Date(now.getTime() + accessExpMillis);
+
+        return Jwts.builder()
+                .subject(userId.toString())
+                .issuedAt(now)
+                .expiration(exp)
+                .claim("email", email)
+                .claim("role", role)
+                .signWith(key)
+                .compact();
+    }
+
+    /** Opaque refresh token (JWT 아님, UUID 기반) */
+    public String generateRefreshToken() {
+        return UUID.randomUUID().toString();
+    }
+
+    /** SHA-256 해시 (DB에는 해시만 저장) */
+    public String hashToken(String token) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 not available", e);
+        }
+    }
+
+    public Claims parseClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     public Claims extractClaims(String token) {
         try {
-            return Jwts.parser()
-                    .verifyWith(Keys.hmacShaKeyFor(secret.getBytes()))
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-        } catch (JwtException e) {
+            return parseClaims(token);
+        } catch (JwtException | IllegalArgumentException e) {
             throw new BadCredentialsException("Invalid JWT token");
         }
     }
 
-    public CustomUserDetails convertToUserDetails(Claims claims) {
-        String customRole = extractCustomRole(claims);
-
-        SupabaseUserDTO userDTO = SupabaseUserDTO.builder()
-                .id(UUID.fromString(claims.getSubject()))
-                .email(claims.get("email", String.class))
-                .role(customRole)
-                .build();
-
-        return new CustomUserDetails(userDTO);
+    public UUID getUserId(Claims claims) {
+        return UUID.fromString(claims.getSubject());
     }
 
-    private String extractCustomRole(Claims claims) {
-        try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> userMetadata = claims.get("raw_user_meta_data", Map.class);
+    public String getEmail(Claims claims) {
+        return claims.get("email", String.class);
+    }
 
-            if (userMetadata == null || !userMetadata.containsKey("role")) {
-                log.debug("No custom role found in raw_user_meta_data, using default role: USER");
-                return "USER";
-            }
-
-            String role = userMetadata.get("role").toString().toUpperCase();
-            log.debug("Extracted custom role: {}", role);
-            return role;
-
-        } catch (Exception e) {
-            log.warn("Error while extracting custom role, using default role: USER", e);
-            return "USER";
-        }
+    public String getRole(Claims claims) {
+        String role = claims.get("role", String.class);
+        return role == null ? "USER" : role.toUpperCase();
     }
 }
