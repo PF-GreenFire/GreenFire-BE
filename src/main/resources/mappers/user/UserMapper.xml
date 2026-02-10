@@ -3,9 +3,9 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="sisosolsol.greenfire.user.model.dao.UserMapper">
+<mapper namespace="sisosolsol.greenfire.user.dao.UserMapper">
 
-    <resultMap id="userResultMap" type="sisosolsol.greenfire.user.model.dto.UserDTO">
+    <resultMap id="userResultMap" type="sisosolsol.greenfire.user.dto.User">
         <id property="userCode" column="user_code" typeHandler="sisosolsol.greenfire.common.handler.UUIDTypeHandler"/>
         <result property="nickname" column="nickname"/>
         <result property="name" column="name"/>
@@ -14,7 +14,21 @@
         <result property="gender" column="gender"/>
         <result property="phone" column="phone"/>
         <result property="status" column="status"/>
+        <result property="password" column="password"/>
+        <result property="profileImage" column="profile_key"/>
+        <result property="coverImage" column="cover_image_key"/>
     </resultMap>
+
+    <select id="findUserSummary" resultMap="userResultMap">
+        SELECT
+            nickname,
+            profile_key,
+            cover_image_key
+        FROM
+            users u
+        WHERE
+            user_code = #{userCode}
+    </select>
 
     <select id="findByUserCode" resultMap="userResultMap">
         SELECT
@@ -23,26 +37,124 @@
             name,
             email,
             birth,
-            gender,
+            password,
             phone,
-            status
-            FROM
-            tbl_user
+            profile_key
+<!--            gender,-->
+<!--            status-->
+        FROM
+            users
         WHERE
-            user_code = CAST(#{userCode} AS uuid)
-        <!--        user_code = #{userCode, typeHandler=sisosolsol.greenfire.common.handler.UUIDTypeHandler}-->
+            user_code = #{userCode}
     </select>
 
-    <update id="updateUserProfile">
+<!--    <update id="updateUserProfile">-->
+    <update id="updateUserProfile" parameterType="sisosolsol.greenfire.user.dto.UpdateUserCommand">
         UPDATE
-            tbl_user
+            users
         SET
-            nickname = #{userDTO.nickname},
-            name = #{userDTO.name},
-            birth = #{userDTO.birth},
-            gender = #{userDTO.gender},
-            phone = #{userDTO.phone}
+        <if test="storageKey != null">
+            profile_key = #{storageKey},
+        </if>
+            nickname = #{nickname},
+            name = #{name},
+            birth = #{birth},
+            email = #{email},
+            phone = #{phone}
         WHERE
-            user_code = CAST(#{userCode} AS uuid)
+            user_code = #{userCode}
     </update>
+
+    <select id="getScrapbookSummary" resultType="sisosolsol.greenfire.user.dto.ScrapbookSummaryDTO">
+        SELECT
+        (SELECT count(store_code) FROM store WHERE user_code = #{userCode}) AS greenfireCount,
+        (SELECT count(challenge_part_code) FROM challenge_part WHERE user_code = #{userCode}) AS challengeCount,
+        (SELECT count(post_code) FROM post WHERE user_code = #{userCode}) AS feedCount,
+        (SELECT count(target_user) FROM user_follows WHERE user_code = #{userCode}) AS friendCount
+    </select>
+
+    <select id="getChallengeSummary" resultType="sisosolsol.greenfire.challenge.model.dto.ChallengeDTO">
+        SELECT *
+        FROM (
+            SELECT
+                ch.challenge_code as challengeCode,
+                ch.challenge_title as challengeTitle,
+                ch.challenge_content,
+                ch.thumbnail_url as thumbnail,
+                ROW_NUMBER() OVER(ORDER BY ch.created_at) AS rn
+            FROM
+                challenge_part cp
+            LEFT JOIN
+                challenge ch
+            ON
+                cp.challenge_code = ch.challenge_code
+            WHERE
+                cp.user_code = #{userCode}
+        ) t
+        WHERE t.rn <![CDATA[<=]]> 3
+    </select>
+
+    <select id="countParticipatingChallenge" resultType="int">
+        SELECT
+            COUNT(challenge_part_code)
+        FROM
+            challenge_part
+        WHERE
+            user_code = #{userCode}
+    </select>
+
+    <update id="changePassword">
+        UPDATE
+            users
+        SET
+            password = #{password}
+        WHERE
+            user_code = #{userCode}
+    </update>
+
+    <update id="deleteUser">
+        UPDATE
+            users
+        SET
+            status = 'WITHDRAWAL'
+        WHERE
+            user_code = #{userCode}
+    </update>
+
+    <insert id="followUser">
+        INSERT INTO
+            user_follow (user_code, target_user)
+        VALUES
+            (#{userCode}, #{targetUser})
+    </insert>
+
+    <delete id="deleteFollow">
+        DELETE
+        FROM
+            user_follow
+        WHERE
+            user_code = #{userCode}
+        AND
+            target_user = #{targetUser}
+    </delete>
+
+    <update id="changeCoverImage">
+        UPDATE
+            users
+        SET
+            cover_image_key = #{storageKey}
+        WHERE
+            user_code = #{userCode}
+    </update>
+
+    <select id="getScrapChallenges" resultType="sisosolsol.greenfire.challenge.model.dto.ChallengeDTO">
+        SELECT
+            challenge_code as challengeCode,
+            challenge_title as challengeTitle,
+            thumbnail_url as thumbnailUrl
+        FROM
+            challenge
+        WHERE
+            host_user = #{userCode}
+    </select>
 </mapper>
