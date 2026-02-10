@@ -9,7 +9,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sisosolsol.greenfire.challenge.model.dto.ChallengeDTO;
@@ -20,6 +20,9 @@ import sisosolsol.greenfire.user.dto.UpdateCoverImageDTO;
 import sisosolsol.greenfire.user.dto.User;
 import sisosolsol.greenfire.user.dto.UpdateUserDTO;
 import sisosolsol.greenfire.user.dto.UserDTO;
+import sisosolsol.greenfire.common.security.model.AuthUser;
+import sisosolsol.greenfire.user.model.dto.UserDTO;
+import sisosolsol.greenfire.user.model.dto.UserUpdateDTO;
 import sisosolsol.greenfire.user.service.UserService;
 
 @RestController

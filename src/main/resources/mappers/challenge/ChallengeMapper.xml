@@ -134,4 +134,10 @@
             AND user_code = #{userCode}::uuid
     </delete>
 
+    <select id="countActiveChallenges" resultType="int">
+        SELECT COUNT(*)
+        FROM tbl_challenge
+        WHERE challenge_status IN ('RECRUITING', 'ONGOING')
+    </select>
+
 </mapper>

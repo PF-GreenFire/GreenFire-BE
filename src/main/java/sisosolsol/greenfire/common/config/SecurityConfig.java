@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -23,6 +24,7 @@ import sisosolsol.greenfire.common.security.jwt.JwtUtil;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -31,38 +33,53 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
-                .cors(Customizer.withDefaults())
+                //.cors(Customizer.withDefaults())
                 // 불필요한 인증 방식 비활성화
                 .formLogin(AbstractHttpConfigurer::disable)  // 폼 로그인 비활성화
                 .httpBasic(AbstractHttpConfigurer::disable)  // HTTP Basic 인증 비활성화 (보안상 안전)
 
                 // CSRF 비활성화
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
-
-                // 세션 비활성화 (JWT 사용)
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // JWT 필터 추가
-                .addFilterBefore(new JwtAuthenticationFilter(jwtUtil),
-                        UsernamePasswordAuthenticationFilter.class)
-
-                // URL별 권한 설정
-                .authorizeHttpRequests(auth -> {
-                        auth.requestMatchers("/api/public/**").permitAll();
-                        auth.requestMatchers("/api/v1/challenge/**").permitAll();
-                        auth.requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN");
-                        auth.requestMatchers("/api/admin/**").hasRole("ADMIN");
-                        auth.requestMatchers("/api/manager/**").hasRole("MANAGER");
-                        // 그 외 모든 리소스 (인증 필요)
-                        // auth.anyRequest().authenticated();
-                        auth.anyRequest().permitAll();
-                })
-                .exceptionHandling(exceptionHandling -> {
-                    exceptionHandling.accessDeniedHandler(jwtAccessDeniedHandler());
-                    exceptionHandling.authenticationEntryPoint(jwtAuthenticationEntryPoint());
-                })
+                .cors(cors -> {}) // CORS 켜기
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/v1/auth/me").authenticated()
+                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/signup",
+                                "/api/v1/auth/refresh", "/api/v1/auth/logout",
+                                "/api/v1/auth/check-email",
+                                "/api/v1/auth/find-email",
+                                "/api/v1/auth/password-reset/**").permitAll()
+                        .requestMatchers("/api/public/**", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .exceptionHandling(e -> e
+                        .accessDeniedHandler(jwtAccessDeniedHandler())
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint())
+                )
                 .build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.addAllowedOriginPattern("http://localhost:3000");
+        config.addAllowedOriginPattern("http://localhost:5173");
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
     @Bean

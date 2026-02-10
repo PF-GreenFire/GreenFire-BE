@@ -9,7 +9,7 @@ import sisosolsol.greenfire.common.enums.post.PostType;
 import sisosolsol.greenfire.common.exception.BadRequestException;
 import sisosolsol.greenfire.common.exception.CustomException;
 import sisosolsol.greenfire.common.exception.type.ExceptionCode;
-import sisosolsol.greenfire.common.security.model.CustomUserDetails;
+import sisosolsol.greenfire.common.security.model.AuthUser;
 import sisosolsol.greenfire.common.security.model.UserRole;
 import sisosolsol.greenfire.image.model.dto.ImageUploadDTO;
 import sisosolsol.greenfire.common.enums.image.ImageType;
@@ -61,7 +61,7 @@ public class PostService {
         return post.getPostCode();
     }
 
-    public void updatePost(Integer postCode, CustomUserDetails user, PostUpdateDTO post) {
+    public void updatePost(Integer postCode, AuthUser user, PostUpdateDTO post) {
         if(!hasPermission(postCode, user))
             throw new CustomException(ExceptionCode.ACCESS_DENIED);
 
@@ -74,15 +74,15 @@ public class PostService {
         }
     }
 
-    public void deletePost(Integer postCode, CustomUserDetails user) {
+    public void deletePost(Integer postCode, AuthUser user) {
         if(!hasPermission(postCode, user))
             throw new CustomException(ExceptionCode.ACCESS_DENIED);
 
         postMapper.deletePost(postCode);
     }
 
-    private boolean hasPermission(Integer postCode, CustomUserDetails user) {
+    private boolean hasPermission(Integer postCode, AuthUser user) {
         PostDTO targetPost = getPost(postCode);
-        return targetPost.getUserCode().equals(user.getId()) || user.getRoleName().equals(UserRole.ADMIN.name());
+        return targetPost.getUserCode().equals(user.userId()) || user.role().equals(UserRole.ADMIN.name());
     }
 }

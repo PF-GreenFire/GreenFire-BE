@@ -1,0 +1,80 @@
+package sisosolsol.greenfire.user.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.UuidGenerator;
+import sisosolsol.greenfire.common.security.model.UserRole;
+
+import java.time.Instant;
+import java.util.UUID;
+
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Entity
+@Table(name = "users")
+public class UserAccount {
+
+    @Id
+    @UuidGenerator
+    @Column(name = "user_id", columnDefinition = "uuid")
+    private UUID id;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role = UserRole.USER;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    @Column(name = "delete_reason")
+    private String deleteReason;
+
+    @Column(name = "suspended_until")
+    private Instant suspendedUntil;
+
+    @Column(name = "suspend_reason")
+    private String suspendReason;
+
+    public UserAccount(String email, String passwordHash, UserRole role) {
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.role = role;
+    }
+
+    public void updatePassword(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
+    }
+
+    public void updateRole(UserRole newRole) {
+        this.role = newRole;
+    }
+
+    public void markDeleted(String reason) {
+        this.deletedAt = Instant.now();
+        this.deleteReason = reason;
+    }
+
+    public boolean isDeleted() {
+        return this.deletedAt != null;
+    }
+
+    public void suspend(Instant until, String reason) {
+        this.suspendedUntil = until;
+        this.suspendReason = reason;
+    }
+
+    public void unsuspend() {
+        this.suspendedUntil = null;
+        this.suspendReason = null;
+    }
+
+    public boolean isSuspended() {
+        return this.suspendedUntil != null && Instant.now().isBefore(this.suspendedUntil);
+    }
+}

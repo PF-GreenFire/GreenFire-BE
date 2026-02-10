@@ -27,4 +27,6 @@ public interface ChallengeMapper {
     ChallengePartDTO selectChallengePart(Integer challengeCode, UUID userCode);
 
     int cancelChallengePart(Integer challengeCode, UUID userCode);
+
+    int countActiveChallenges();
 }
