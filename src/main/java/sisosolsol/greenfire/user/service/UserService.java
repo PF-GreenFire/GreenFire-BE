@@ -14,9 +14,11 @@ import sisosolsol.greenfire.challenge.model.dto.ChallengeDTO;
 import sisosolsol.greenfire.common.exception.type.ExceptionCode;
 import sisosolsol.greenfire.user.dao.UserMapper;
 import sisosolsol.greenfire.user.dto.ChallengeSummaryDTO;
+import sisosolsol.greenfire.user.dto.EchoMemorySummaryDTO;
 import sisosolsol.greenfire.user.dto.PasswordChangeRequest;
 import sisosolsol.greenfire.user.dto.FileStorage;
 import sisosolsol.greenfire.user.dto.ScrapbookSummaryDTO;
+import sisosolsol.greenfire.user.dto.UpdateCoverImageDTO;
 import sisosolsol.greenfire.user.dto.UpdateUserCommand;
 import sisosolsol.greenfire.user.dto.User;
 import sisosolsol.greenfire.user.dto.UserProfileDTO;
@@ -59,7 +61,7 @@ public class UserService {
     @Transactional
     public User updateUserProfile(UUID userCode, UpdateUserDTO request, MultipartFile file) {
         // 1. 프로필 이미지 처리 (storageKey 결정 + 파일 저장)
-        String storageKey = resolveProfileImageKey(request, file, userCode);
+        String storageKey = resolveStoreKey(request.isDeleteProfileImage(), file, "users/" + userCode + "/profile.jpg");
 
         // 2. DB 업데이트
         UpdateUserCommand command = UpdateUserCommand.of(userCode, request, storageKey);
@@ -78,17 +80,17 @@ public class UserService {
     }
 
     /**
-     * 프로필 이미지 storageKey를 결정합니다.
+     * 프로필 이미지 storageKey 반환
      * - null  : 이미지 변경 없음 (기존 유지)
      * - ""    : 이미지 삭제 요청
      * - 그 외 : 새 이미지 업로드 경로
      */
-    private String resolveProfileImageKey(UpdateUserDTO request, MultipartFile file, UUID userCode) {
-        if (request.isDeleteProfileImage()) {
+    private String resolveStoreKey(boolean deleteImage, MultipartFile file, String storageKey) {
+        if (deleteImage) {
             return "";
         }
         if (file != null && !file.isEmpty()) {
-            return fileStorage.save("users/" + userCode + "/profile.jpg", file);
+            return fileStorage.save(storageKey, file);
         }
         return null;
     }
@@ -104,11 +106,19 @@ public class UserService {
                                                                 .challenges(challenges)
                                                                 .build();
 
+
+        EchoMemorySummaryDTO echoMemorySummary = EchoMemorySummaryDTO.builder()
+                                                                .postCount(0)
+                                                                .followers(0)
+                                                                .followings(0)
+                                                                .build();
+
         User user = userMapper.findUserSummary(userCode);
         UserProfileDTO userProfileDTO = UserProfileDTO.builder()
                                                     .user(user)
                                                     .scrapbookSummary(scrapbookSummary)
                                                     .challengeSummary(challengeSummary)
+                                                    .echoMemorySummary(echoMemorySummary)
                                                     .build();
         return userProfileDTO;
     }
@@ -143,5 +153,16 @@ public class UserService {
 
     public void deleteFollow(UUID userCode, UUID targetUser) {
         userMapper.deleteFollow(userCode, targetUser);
+    }
+
+    public String changeCoverImage(UUID userCode, UpdateCoverImageDTO request, MultipartFile file) {
+        String storageKey = resolveStoreKey(request.isDeleteProfileImage(), file, "users/" + userCode + "/cover.jpg");
+
+        userMapper.changeCoverImage(userCode, storageKey);
+        return storageKey;
+    }
+
+    public List<ChallengeDTO> getScrapChallenges(UUID userCode) {
+        return userMapper.getScrapChallenges(userCode);
     }
 }

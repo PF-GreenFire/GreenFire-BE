@@ -16,14 +16,16 @@
         <result property="status" column="status"/>
         <result property="password" column="password"/>
         <result property="profileImage" column="profile_key"/>
+        <result property="coverImage" column="cover_image_key"/>
     </resultMap>
 
     <select id="findUserSummary" resultMap="userResultMap">
         SELECT
             nickname,
-            profile_key
+            profile_key,
+            cover_image_key
         FROM
-            users
+            users u
         WHERE
             user_code = #{userCode}
     </select>
@@ -135,4 +137,24 @@
         AND
             target_user = #{targetUser}
     </delete>
+
+    <update id="changeCoverImage">
+        UPDATE
+            users
+        SET
+            cover_image_key = #{storageKey}
+        WHERE
+            user_code = #{userCode}
+    </update>
+
+    <select id="getScrapChallenges" resultType="sisosolsol.greenfire.challenge.model.dto.ChallengeDTO">
+        SELECT
+            challenge_code as challengeCode,
+            challenge_title as challengeTitle,
+            thumbnail_url as thumbnailUrl
+        FROM
+            challenge
+        WHERE
+            host_user = #{userCode}
+    </select>
 </mapper>

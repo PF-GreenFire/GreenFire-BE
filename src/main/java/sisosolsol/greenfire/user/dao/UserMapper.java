@@ -36,4 +36,7 @@ public interface UserMapper {
 
     void deleteFollow(@Param("userCode") UUID userCode, @Param("targetUser") UUID targetUser);
 
+    void changeCoverImage(@Param("userCode") UUID userCode, @Param("storageKey") String storageKey);
+
+    List<ChallengeDTO> getScrapChallenges(@Param("userCode") UUID userCode);
 }

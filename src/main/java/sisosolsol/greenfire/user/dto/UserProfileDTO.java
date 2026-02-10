@@ -11,4 +11,5 @@ public class UserProfileDTO {
     private User user;
     private ScrapbookSummaryDTO scrapbookSummary;
     private ChallengeSummaryDTO challengeSummary;
+    private EchoMemorySummaryDTO echoMemorySummary;
 }

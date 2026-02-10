@@ -16,6 +16,7 @@ import sisosolsol.greenfire.challenge.model.dto.ChallengeDTO;
 import sisosolsol.greenfire.common.config.UploadAllowConfig;
 import sisosolsol.greenfire.common.security.model.CustomUserDetails;
 import sisosolsol.greenfire.user.dto.PasswordChangeRequest;
+import sisosolsol.greenfire.user.dto.UpdateCoverImageDTO;
 import sisosolsol.greenfire.user.dto.User;
 import sisosolsol.greenfire.user.dto.UpdateUserDTO;
 import sisosolsol.greenfire.user.dto.UserDTO;
@@ -34,6 +35,11 @@ public class UserController {
     public ResponseEntity getUserSummaryData(@AuthenticationPrincipal CustomUserDetails loginUser) {
 //        return ResponseEntity.ok(userService.getScrapbookSummary(loginUser.getId()));
         return ResponseEntity.ok(userService.getUserSummaryData(TEST_USER_CODE));
+    }
+
+    @GetMapping("/scraps/challenges")
+    public ResponseEntity getScrapChallenges(@AuthenticationPrincipal CustomUserDetails loginUser) {
+        return ResponseEntity.ok(userService.getScrapChallenges(TEST_USER_CODE));
     }
 
     @GetMapping("/me")
@@ -79,7 +85,6 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-
     @PostMapping("/follows/{targetCode}")
     public ResponseEntity<Void> followUser(@PathVariable("targetCode") String targetUser) {
         userService.followUser(TEST_USER_CODE, UUID.fromString(targetUser));
@@ -90,5 +95,13 @@ public class UserController {
     public ResponseEntity<Void> deleteUSer(@PathVariable("targetCode") String targetUser) {
         userService.deleteFollow(TEST_USER_CODE, UUID.fromString(targetUser));
         return ResponseEntity.ok().build();
+    }
+
+    @PutMapping(value = "/me/cover-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> changeCoverImage(
+        @RequestPart("data") @Valid UpdateCoverImageDTO request,
+        @RequestPart(value = "image", required = false) MultipartFile file) {
+        String coverStorageKey = userService.changeCoverImage(TEST_USER_CODE, request, file);
+        return ResponseEntity.ok(coverStorageKey);
     }
 }
