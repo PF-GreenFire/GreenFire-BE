@@ -10,7 +10,7 @@
             challenge_category_code as categoryCode,
             challenge_category_name as categoryName
         FROM
-            tbl_challenge_category
+            challenge_category
         WHERE
             status = 'ACTIVE'
         ORDER BY
@@ -22,7 +22,7 @@
             store_category_code as categoryCode,
             store_category_name as categoryName
         FROM
-            tbl_store_category
+            store_category
         WHERE
             status = 'ACTIVE'
         ORDER BY
@@ -31,21 +31,21 @@
 
     <insert id="registChallengeCategory" useGeneratedKeys="true" keyProperty="categoryCode">
         INSERT INTO
-            tbl_challenge_category (challenge_category_name)
+            challenge_category (challenge_category_name)
         VALUES
             (#{categoryName})
     </insert>
 
     <insert id="registStoreCategory" useGeneratedKeys="true" keyProperty="categoryCode">
         INSERT INTO
-            tbl_store_category (store_category_name)
+            store_category (store_category_name)
         VALUES
             (#{categoryName})
     </insert>
 
     <update id="updateChallengeCategory">
         UPDATE
-            tbl_challenge_category
+            challenge_category
         SET
             challenge_category_name = #{category.categoryName}
         WHERE
@@ -54,7 +54,7 @@
 
     <update id="updateStoreCategory">
         UPDATE
-            tbl_store_category
+            store_category
         SET
             store_category_name = #{category.categoryName}
         WHERE
@@ -63,7 +63,7 @@
 
     <update id="deleteChallengeCategory">
         UPDATE
-            tbl_challenge_category
+            challenge_category
         SET
             status = 'DELETED'
         WHERE
@@ -72,7 +72,7 @@
 
     <update id="deleteStoreCategory">
         UPDATE
-            tbl_store_category
+            store_category
         SET
             status = 'DELETED'
         WHERE

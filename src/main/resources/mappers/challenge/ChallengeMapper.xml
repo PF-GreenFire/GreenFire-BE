@@ -136,7 +136,7 @@
 
     <select id="countActiveChallenges" resultType="int">
         SELECT COUNT(*)
-        FROM tbl_challenge
+        FROM challenge
         WHERE challenge_status IN ('RECRUITING', 'ONGOING')
     </select>
 

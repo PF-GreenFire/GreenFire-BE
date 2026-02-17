@@ -17,7 +17,7 @@ public record MemberResponse(
         return new MemberResponse(
                 user.getId(),
                 user.getEmail(),
-                user.getRole().name(),
+                user.getRole() != null ? user.getRole().name() : "USER",
                 user.getDeletedAt(),
                 user.getSuspendedUntil(),
                 user.isSuspended()

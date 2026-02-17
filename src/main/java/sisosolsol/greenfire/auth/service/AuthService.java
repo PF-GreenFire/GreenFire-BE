@@ -24,6 +24,11 @@ import sisosolsol.greenfire.common.security.model.UserRole;
 import sisosolsol.greenfire.user.entity.UserAccount;
 import sisosolsol.greenfire.user.repository.UserAccountRepository;
 
+import org.springframework.web.multipart.MultipartFile;
+import sisosolsol.greenfire.common.enums.image.ImageType;
+import sisosolsol.greenfire.common.util.FileUploadUtil;
+import sisosolsol.greenfire.image.model.dto.ImageUploadDTO;
+
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -50,9 +55,10 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final ActivityLogService activityLogService;
     private final EmailService emailService;
+    private final FileUploadUtil fileUploadUtil;
 
     @Transactional
-    public void signup(SignupRequest req, String ipAddress) {
+    public void signup(SignupRequest req, MultipartFile profileImage, String ipAddress) {
         // 비밀번호 강도 검증
         if (!PASSWORD_PATTERN.matcher(req.password()).matches()) {
             throw new BadRequestException(ExceptionCode.WEAK_PASSWORD);
@@ -75,8 +81,20 @@ public class AuthService {
         UserAccount user = new UserAccount(
                 req.email(),
                 passwordEncoder.encode(req.password()),
-                UserRole.USER
+                UserRole.USER,
+                req.name(),
+                req.nickname(),
+                req.birth(),
+                req.gender(),
+                req.phone()
         );
+
+        // 프로필 이미지 업로드
+        if (profileImage != null && !profileImage.isEmpty()) {
+            ImageUploadDTO uploadResult = fileUploadUtil.uploadFile(profileImage, ImageType.PROFILE);
+            user.updateProfileKey(uploadResult.getPath());
+        }
+
         userAccountRepository.save(user);
 
         activityLogService.log(user.getId(), ActionType.SIGNUP, ResourceType.ACCOUNT, null, null, ipAddress);

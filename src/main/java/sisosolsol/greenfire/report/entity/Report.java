@@ -11,7 +11,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "tbl_report", indexes = {
+@Table(name = "report", indexes = {
         @Index(name = "idx_report_status", columnList = "status"),
         @Index(name = "idx_report_reporter", columnList = "reporter_id"),
         @Index(name = "idx_report_resource", columnList = "resource_type, resource_id")

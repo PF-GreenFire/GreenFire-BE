@@ -11,6 +11,8 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 import sisosolsol.greenfire.challenge.model.dto.ChallengeDTO;
+import sisosolsol.greenfire.common.exception.BadRequestException;
+import sisosolsol.greenfire.common.exception.NotFoundException;
 import sisosolsol.greenfire.common.exception.type.ExceptionCode;
 import sisosolsol.greenfire.user.dao.UserMapper;
 import sisosolsol.greenfire.user.dto.ChallengeSummaryDTO;
@@ -24,18 +26,16 @@ import sisosolsol.greenfire.user.dto.User;
 import sisosolsol.greenfire.user.dto.UserProfileDTO;
 import sisosolsol.greenfire.user.dto.UpdateUserDTO;
 
-import sisosolsol.greenfire.user.exception.UserNotFoundException;
-import sisosolsol.greenfire.user.model.dao.UserMapper;
-import sisosolsol.greenfire.user.model.dto.UserDTO;
-import sisosolsol.greenfire.user.model.dto.UserUpdateDTO;
-
-import java.util.Optional;
-import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class UserService {
+
+    private static final Pattern PASSWORD_PATTERN = Pattern.compile(
+            "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$"
+    );
 
     private final FileStorage fileStorage;
     private final PasswordEncoder passwordEncoder;
@@ -133,24 +133,25 @@ public class UserService {
     public void changePassword(UUID userCode, PasswordChangeRequest request) {
         User user = userMapper.findByUserCode(userCode);
         if (user == null) {
-            throw new UserNotFoundException(ExceptionCode.USER_NOT_FOUND);
+            throw new NotFoundException(ExceptionCode.USER_NOT_FOUND);
         }
 
         // 현재 비밀번호 검증
         if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
-            throw new RuntimeException("현재 비밀번호가 일치하지 않습니다.");
+            throw new BadRequestException(ExceptionCode.PASSWORD_MISMATCH);
         }
 
         // 새 비밀번호와 현재 비밀번호 동일 체크
         if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
-            throw new RuntimeException("현재 비밀번호와 다른 비밀번호를 입력해주세요");
+            throw new BadRequestException(ExceptionCode.SAME_PASSWORD);
+        }
+
+        // 비밀번호 강도 검증
+        if (!PASSWORD_PATTERN.matcher(request.newPassword()).matches()) {
+            throw new BadRequestException(ExceptionCode.WEAK_PASSWORD);
         }
 
         userMapper.changePassword(userCode, passwordEncoder.encode(request.newPassword()));
-    }
-
-    public void deleteUser(UUID testUserCode) {
-        userMapper.deleteUser(testUserCode);
     }
 
     public void followUser(UUID userCode, UUID targetUser) {

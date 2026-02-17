@@ -1,5 +1,6 @@
 package sisosolsol.greenfire.user.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -9,20 +10,17 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import sisosolsol.greenfire.challenge.model.dto.ChallengeDTO;
+import sisosolsol.greenfire.auth.dto.DeleteAccountRequest;
+import sisosolsol.greenfire.auth.service.AuthService;
 import sisosolsol.greenfire.common.config.UploadAllowConfig;
-import sisosolsol.greenfire.common.security.model.CustomUserDetails;
+import sisosolsol.greenfire.common.security.model.AuthUser;
 import sisosolsol.greenfire.user.dto.PasswordChangeRequest;
 import sisosolsol.greenfire.user.dto.UpdateCoverImageDTO;
 import sisosolsol.greenfire.user.dto.User;
 import sisosolsol.greenfire.user.dto.UpdateUserDTO;
-import sisosolsol.greenfire.user.dto.UserDTO;
-import sisosolsol.greenfire.common.security.model.AuthUser;
-import sisosolsol.greenfire.user.model.dto.UserDTO;
-import sisosolsol.greenfire.user.model.dto.UserUpdateDTO;
 import sisosolsol.greenfire.user.service.UserService;
 
 @RestController
@@ -32,30 +30,27 @@ public class UserController {
 
     private final UploadAllowConfig uploadAllowConfig;
     private final UserService userService;
-    private static final UUID TEST_USER_CODE = UUID.fromString("dc31ee31-5f6f-4538-893a-462fabec8fef");
+    private final AuthService authService;
 
     @GetMapping("/me/summary")
-    public ResponseEntity getUserSummaryData(@AuthenticationPrincipal CustomUserDetails loginUser) {
-//        return ResponseEntity.ok(userService.getScrapbookSummary(loginUser.getId()));
-        return ResponseEntity.ok(userService.getUserSummaryData(TEST_USER_CODE));
+    public ResponseEntity getUserSummaryData(@AuthenticationPrincipal AuthUser loginUser) {
+        return ResponseEntity.ok(userService.getUserSummaryData(loginUser.userId()));
     }
 
     @GetMapping("/scraps/challenges")
-    public ResponseEntity getScrapChallenges(@AuthenticationPrincipal CustomUserDetails loginUser) {
-        return ResponseEntity.ok(userService.getScrapChallenges(TEST_USER_CODE));
+    public ResponseEntity getScrapChallenges(@AuthenticationPrincipal AuthUser loginUser) {
+        return ResponseEntity.ok(userService.getScrapChallenges(loginUser.userId()));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<User> getUserProfile(/*@AuthenticationPrincipal CustomUserDetails loginUser*/) {
-//        UserDTO userDTO = userService.getUserProfile();
-        User user = userService.getUserProfile(TEST_USER_CODE);
-//        UserDTO dto = UserDTO.from(user);
+    public ResponseEntity<User> getUserProfile(@AuthenticationPrincipal AuthUser loginUser) {
+        User user = userService.getUserProfile(loginUser.userId());
         return ResponseEntity.ok(user);
     }
 
     @GetMapping("/me/profile-image")
-    public ResponseEntity<Resource> getProfileImage(@AuthenticationPrincipal CustomUserDetails loginUser) {
-        Path filePath = Paths.get(uploadAllowConfig.getDirectory(), TEST_USER_CODE.toString(), "profile.jpg");
+    public ResponseEntity<Resource> getProfileImage(@AuthenticationPrincipal AuthUser loginUser) {
+        Path filePath = Paths.get(uploadAllowConfig.getDirectory(), loginUser.userId().toString(), "profile.jpg");
         Resource resource = new FileSystemResource(filePath);
 
         if (!resource.exists()) {
@@ -68,43 +63,47 @@ public class UserController {
     }
 
     @PutMapping(value = "/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<User> updateUserProfile(/*@AuthenticationPrincipal CustomUserDetails loginUser,*/
+    public ResponseEntity<User> updateUserProfile(@AuthenticationPrincipal AuthUser loginUser,
         @RequestPart("data") @Valid UpdateUserDTO request,
         @RequestPart(value = "image", required = false) MultipartFile file) {
-//        UserDTO updatedProfile = userService.updateUserProfile(loginUser, request);
-        User updatedProfile = userService.updateUserProfile(TEST_USER_CODE, request, file);
+        User updatedProfile = userService.updateUserProfile(loginUser.userId(), request, file);
         return ResponseEntity.ok(updatedProfile);
     }
 
     @PutMapping("/me/password")
-    public ResponseEntity<Void> changePassword(@RequestBody @Valid PasswordChangeRequest request) {
-        userService.changePassword(TEST_USER_CODE, request);
+    public ResponseEntity<Void> changePassword(@AuthenticationPrincipal AuthUser loginUser,
+        @RequestBody @Valid PasswordChangeRequest request) {
+        userService.changePassword(loginUser.userId(), request);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/me")
-    public ResponseEntity<Void> deleteUser() {
-        userService.deleteUser(TEST_USER_CODE);
+    public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal AuthUser loginUser,
+        @Valid @RequestBody DeleteAccountRequest request,
+        HttpServletRequest httpRequest) {
+        authService.deleteAccount(loginUser.userId(), request.password(), request.reason(), httpRequest.getRemoteAddr());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/follows/{targetCode}")
-    public ResponseEntity<Void> followUser(@PathVariable("targetCode") String targetUser) {
-        userService.followUser(TEST_USER_CODE, UUID.fromString(targetUser));
+    public ResponseEntity<Void> followUser(@AuthenticationPrincipal AuthUser loginUser,
+        @PathVariable("targetCode") String targetUser) {
+        userService.followUser(loginUser.userId(), UUID.fromString(targetUser));
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/follows/{targetCode}")
-    public ResponseEntity<Void> deleteUSer(@PathVariable("targetCode") String targetUser) {
-        userService.deleteFollow(TEST_USER_CODE, UUID.fromString(targetUser));
+    public ResponseEntity<Void> unfollowUser(@AuthenticationPrincipal AuthUser loginUser,
+        @PathVariable("targetCode") String targetUser) {
+        userService.deleteFollow(loginUser.userId(), UUID.fromString(targetUser));
         return ResponseEntity.ok().build();
     }
 
     @PutMapping(value = "/me/cover-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> changeCoverImage(
+    public ResponseEntity<String> changeCoverImage(@AuthenticationPrincipal AuthUser loginUser,
         @RequestPart("data") @Valid UpdateCoverImageDTO request,
         @RequestPart(value = "image", required = false) MultipartFile file) {
-        String coverStorageKey = userService.changeCoverImage(TEST_USER_CODE, request, file);
+        String coverStorageKey = userService.changeCoverImage(loginUser.userId(), request, file);
         return ResponseEntity.ok(coverStorageKey);
     }
 }

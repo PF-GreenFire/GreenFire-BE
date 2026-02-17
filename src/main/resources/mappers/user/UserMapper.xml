@@ -112,18 +112,9 @@
             user_code = #{userCode}
     </update>
 
-    <update id="deleteUser">
-        UPDATE
-            users
-        SET
-            status = 'WITHDRAWAL'
-        WHERE
-            user_code = #{userCode}
-    </update>
-
     <insert id="followUser">
         INSERT INTO
-            user_follow (user_code, target_user)
+            user_follows (user_code, target_user)
         VALUES
             (#{userCode}, #{targetUser})
     </insert>
@@ -131,7 +122,7 @@
     <delete id="deleteFollow">
         DELETE
         FROM
-            user_follow
+            user_follows
         WHERE
             user_code = #{userCode}
         AND
