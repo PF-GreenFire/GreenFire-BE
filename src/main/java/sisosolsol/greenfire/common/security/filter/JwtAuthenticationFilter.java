@@ -73,10 +73,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // ✅ 토큰 없이도 접근 가능한 엔드포인트만 제외
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return true;
 
-        return path.equals("/api/v1/auth/login")
-                || path.equals("/api/v1/auth/signup")
-                || path.equals("/api/v1/auth/refresh")
-                || path.equals("/api/v1/auth/logout")
+        return path.equals("/api/auth/login")
+                || path.equals("/api/auth/signup")
+                || path.equals("/api/auth/refresh")
+                || path.equals("/api/auth/logout")
                 || path.startsWith("/swagger-ui/")
                 || path.startsWith("/v3/api-docs/");
     }

@@ -8,7 +8,7 @@
     <!-- 글 이미지 등록 -->
     <insert id="savePostImage" useGeneratedKeys="true" keyProperty="categoryCode">
         INSERT INTO
-            tbl_image (post_code, path, origin_name, file_name)
+            image (post_code, path, origin_name, file_name)
         VALUES
             (#{postCode}, #{image.path}, #{image.origin_name}, #{image.file_name})
     </insert>
@@ -16,7 +16,7 @@
     <!-- 장소 이미지 등록 -->
     <insert id="saveStoreImage" useGeneratedKeys="true" keyProperty="image.imageCode">
         INSERT INTO
-            tbl_image (store_code, path, origin_name, file_name, "order")
+            image (store_code, path, origin_name, file_name, "order")
         VALUES
             (
                 #{storeCode}, #{image.path}, #{image.originName}, #{image.fileName},
@@ -24,7 +24,7 @@
                     SELECT
                         COALESCE(MAX("order"), 0) + 1
                     FROM
-                        tbl_image
+                        image
                     WHERE
                         store_code = #{storeCode}
                 )
@@ -33,20 +33,20 @@
 
     <!-- 글 전체 이미지 삭제 -->
     <delete id="deleteAllInPost">
-        DELETE FROM tbl_image
+        DELETE FROM image
         WHERE post_code = #{postCode}
     </delete>
 
     <!-- 장소 전체 이미지 삭제 -->
     <delete id="deleteAllInStore">
-        DELETE FROM tbl_image
+        DELETE FROM image
         WHERE store_code = #{storeCode}
     </delete>
 
     <!-- 범용 이미지 저장 -->
     <insert id="saveImage" useGeneratedKeys="true" keyProperty="image.imageCode">
         INSERT INTO
-        tbl_image (reference_type, reference_code, path, origin_name, file_name, "order")
+        image (reference_type, reference_code, path, origin_name, file_name, "order")
         VALUES
         (
         #{referenceType}, #{referenceCode}, #{image.path}, #{image.originName}, #{image.fileName},
@@ -54,7 +54,7 @@
         SELECT
         COALESCE(MAX("order"), 0) + 1
         FROM
-        tbl_image
+        image
         WHERE
         reference_type = #{referenceType} AND reference_code = #{referenceCode}
         )
@@ -72,7 +72,7 @@
         file_name as fileName,
         "order"
         FROM
-        tbl_image
+        image
         WHERE
         reference_type = #{referenceType}
         AND reference_code = #{referenceCode}
@@ -82,13 +82,13 @@
 
     <!-- 범용 이미지 전체 삭제 -->
     <delete id="deleteAllByReference">
-        DELETE FROM tbl_image
+        DELETE FROM image
         WHERE reference_type = #{referenceType} AND reference_code = #{referenceCode}
     </delete>
 
     <!-- 특정 이미지 삭제 -->
     <delete id="deleteByImageCode">
-        DELETE FROM tbl_image
+        DELETE FROM image
         WHERE image_code = #{imageCode}
     </delete>
 
@@ -97,7 +97,7 @@
         SELECT
         COUNT(*)
         FROM
-        tbl_image
+        image
         WHERE
         reference_type = #{referenceType}
         AND reference_code = #{referenceCode}

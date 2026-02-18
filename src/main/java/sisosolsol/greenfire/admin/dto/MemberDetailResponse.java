@@ -21,7 +21,7 @@ public record MemberDetailResponse(
         return new MemberDetailResponse(
                 user.getId(),
                 user.getEmail(),
-                user.getRole().name(),
+                user.getRole() != null ? user.getRole().name() : "USER",
                 user.getDeletedAt(),
                 user.getDeleteReason(),
                 user.getSuspendedUntil(),

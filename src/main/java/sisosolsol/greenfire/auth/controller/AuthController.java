@@ -6,9 +6,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sisosolsol.greenfire.auth.dto.*;
 import sisosolsol.greenfire.auth.service.AuthService;
 import sisosolsol.greenfire.common.security.jwt.JwtUtil;
@@ -18,11 +20,11 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
 
     private static final String REFRESH_COOKIE_NAME = "refreshToken";
-    private static final String COOKIE_PATH = "/api/v1/auth";
+    private static final String COOKIE_PATH = "/api/auth";
 
     private final AuthService authService;
     private final JwtUtil jwtUtil;
@@ -30,10 +32,11 @@ public class AuthController {
     @Value("${app.cookie.secure:false}")
     private boolean cookieSecure;
 
-    @PostMapping("/signup")
-    public ResponseEntity<Void> signup(@Valid @RequestBody SignupRequest req,
+    @PostMapping(value = "/signup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> signup(@Valid @RequestPart("data") SignupRequest req,
+                                       @RequestPart(value = "profileImage", required = false) MultipartFile profileImage,
                                        HttpServletRequest request) {
-        authService.signup(req, request.getRemoteAddr());
+        authService.signup(req, profileImage, request.getRemoteAddr());
         return ResponseEntity.ok().build();
     }
 

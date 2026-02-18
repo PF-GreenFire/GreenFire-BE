@@ -18,14 +18,14 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1")
+@RequestMapping("/api")
 public class ReportController {
 
     private final ReportService reportService;
 
     /**
      * 신고 접수
-     * POST /api/v1/reports
+     * POST /api/reports
      */
     @PostMapping("/reports")
     public ResponseEntity<Map<String, Object>> createReport(
@@ -46,7 +46,7 @@ public class ReportController {
 
     /**
      * 신고 목록 조회 (관리자)
-     * GET /api/v1/admin/reports?page=1&size=20&status=PENDING
+     * GET /api/admin/reports?page=1&size=20&status=PENDING
      */
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/reports")
@@ -61,7 +61,7 @@ public class ReportController {
 
     /**
      * 신고 처리 (관리자)
-     * PATCH /api/v1/admin/reports/{id}/handle
+     * PATCH /api/admin/reports/{id}/handle
      */
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/admin/reports/{id}/handle")
@@ -82,7 +82,7 @@ public class ReportController {
 
     /**
      * 대기 중인 신고 건수 (관리자 대시보드용)
-     * GET /api/v1/admin/reports/pending-count
+     * GET /api/admin/reports/pending-count
      */
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/reports/pending-count")

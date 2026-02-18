@@ -51,11 +51,11 @@
                 i.path,
                 i.file_name
             FROM
-                tbl_store s
+                store s
             LEFT JOIN
-                tbl_store_category c ON s.store_category_code = c.store_category_code
+                store_category c ON s.store_category_code = c.store_category_code
             LEFT JOIN
-                tbl_image i ON i.store_code = s.store_code
+                image i ON i.store_code = s.store_code
             WHERE
                 s.store_status = 'APPROVE'
         </select>
@@ -63,7 +63,7 @@
         <!-- 관리자 초록불 장소 상태에 따른 목록 페이징 조회를 위한 토탈 갯수 조회 -->
         <select id="countStoresByStoreStatus" resultType="int">
             SELECT COUNT(*)
-            FROM tbl_store
+            FROM store
             WHERE store_status = #{storeStatus}
         </select>
 
@@ -76,11 +76,11 @@
                 s.store_status,
                 a.area_name
             FROM
-                tbl_store s
+                store s
             LEFT JOIN
-                tbl_location l ON s.location_code = l.location_code
+                location l ON s.location_code = l.location_code
             LEFT JOIN
-                tbl_area a ON l.area_code = a.area_code
+                area a ON l.area_code = a.area_code
             WHERE
                 s.store_status = #{storeStatus}
             ORDER BY
@@ -91,7 +91,7 @@
         <!-- 초록불 장소 신청 등록 -->
         <insert id="registApplyStore"  useGeneratedKeys="true" keyProperty="storeCreateDTO.storeCode">
             INSERT INTO
-                tbl_store (
+                store (
                     store_name,
                     store_status,
                     store_phone,
@@ -125,7 +125,7 @@
     <!-- 초록불 회원 본인이 신청한 장소 목록 페이징 조회를 위한 토탈 갯수 조회 -->
     <select id="countApplyStoresByUserCode" resultType="int">
         SELECT COUNT(*)
-        FROM tbl_store
+        FROM store
         WHERE user_code = #{userCode}::uuid
     </select>
 
@@ -138,11 +138,11 @@
             s.store_status,
             a.area_name
         FROM
-            tbl_store s
+            store s
         LEFT JOIN
-            tbl_location l ON s.location_code = l.location_code
+            location l ON s.location_code = l.location_code
         LEFT JOIN
-            tbl_area a ON l.area_code = a.area_code
+            area a ON l.area_code = a.area_code
         WHERE
             s.user_code = #{userCode}::uuid
         ORDER BY
@@ -168,13 +168,13 @@
             i.path,
             i.file_name
         FROM
-            tbl_store s
+            store s
         LEFT JOIN
-            tbl_location l ON s.location_code = l.location_code
+            location l ON s.location_code = l.location_code
         LEFT JOIN
-            tbl_store_category c ON s.store_category_code = c.store_category_code
+            store_category c ON s.store_category_code = c.store_category_code
         LEFT JOIN
-            tbl_image i ON s.store_code = i.store_code
+            image i ON s.store_code = i.store_code
         WHERE
             s.store_code = #{storeCode}
     </select>
@@ -182,7 +182,7 @@
     <!-- 관리자 장소 정보 수정 -->
     <update id="updateStore">
         UPDATE
-            tbl_store
+            store
         SET
             store_name = #{updateDTO.storeName},
             store_status = #{updateDTO.storeStatus},
@@ -201,7 +201,7 @@
     <!-- 관리자 장소 상태 변경 -->
     <update id="updateStoreStatus">
         UPDATE
-            tbl_store
+            store
         SET
             store_status = #{storeUpdateStatusDTO.status}
         WHERE

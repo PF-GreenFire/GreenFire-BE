@@ -12,7 +12,7 @@ import java.net.URI;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/challenges")
+@RequestMapping("/api/challenges")
 public class ChallengeController {
 
     private final ChallengeService challengeService;
@@ -20,7 +20,7 @@ public class ChallengeController {
     @PostMapping
     public ResponseEntity<Void> createChallenge(@RequestBody ChallengeCreateDTO challenge) {
         Integer challengeCode = challengeService.registChallenge(challenge);
-        return ResponseEntity.created(URI.create("/api/v1/challenges/" + challengeCode)).build();
+        return ResponseEntity.created(URI.create("/api/challenges/" + challengeCode)).build();
     }
 
     @GetMapping
@@ -50,12 +50,12 @@ public class ChallengeController {
             ) {
 
         challengeService.applyChallenge(challengeCode);
-        return ResponseEntity.created(URI.create("/api/v1/challenges/" + challengeCode)).build();
+        return ResponseEntity.created(URI.create("/api/challenges/" + challengeCode)).build();
     }
 
     @DeleteMapping("/{challengeCode}/apply/cancel")
     public ResponseEntity<Void> cancelChallengePart(@PathVariable Integer challengeCode) {
         challengeService.cancelChallengePart(challengeCode);
-        return ResponseEntity.created(URI.create("/api/v1/challenges/" + challengeCode)).build();
+        return ResponseEntity.created(URI.create("/api/challenges/" + challengeCode)).build();
     }
 }

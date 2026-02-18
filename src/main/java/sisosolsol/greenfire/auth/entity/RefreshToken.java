@@ -15,7 +15,7 @@ import java.util.UUID;
 @Table(name = "refresh_tokens", indexes = {
         @Index(name = "idx_refresh_token_hash", columnList = "tokenHash"),
         @Index(name = "idx_refresh_token_family", columnList = "family"),
-        @Index(name = "idx_refresh_token_user_id", columnList = "userId")
+        @Index(name = "idx_refresh_token_user_code", columnList = "user_code")
 })
 public class RefreshToken {
 
@@ -24,7 +24,7 @@ public class RefreshToken {
     @Column(columnDefinition = "uuid")
     private UUID id;
 
-    @Column(nullable = false, columnDefinition = "uuid")
+    @Column(name = "user_code", nullable = false, columnDefinition = "uuid")
     private UUID userId;
 
     @Column(nullable = false, length = 64)

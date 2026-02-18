@@ -46,6 +46,8 @@ public enum ExceptionCode {
 
     // 400 BAD REQUEST
     WEAK_PASSWORD(400, "비밀번호는 8자 이상, 대문자·소문자·숫자·특수문자를 각 1개 이상 포함해야 합니다."),
+    PASSWORD_MISMATCH(400, "현재 비밀번호가 일치하지 않습니다."),
+    SAME_PASSWORD(400, "현재 비밀번호와 다른 비밀번호를 입력해주세요."),
     RESET_CODE_EXPIRED(400, "인증 코드가 만료되었습니다."),
     RESET_CODE_INVALID(400, "유효하지 않은 인증 코드입니다."),
     RESET_CODE_NOT_VERIFIED(400, "이메일 인증이 완료되지 않았습니다."),
