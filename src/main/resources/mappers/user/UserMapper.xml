@@ -21,9 +21,8 @@
 
     <select id="findUserSummary" resultMap="userResultMap">
         SELECT
-            nickname,
-            profile_key,
-            cover_image_key
+            user_code,
+            nickname
         FROM
             users u
         WHERE

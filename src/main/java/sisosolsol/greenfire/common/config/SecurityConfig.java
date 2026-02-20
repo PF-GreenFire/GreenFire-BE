@@ -39,20 +39,19 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)  // HTTP Basic 인증 비활성화 (보안상 안전)
 
                 // CSRF 비활성화
-                .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> {}) // CORS 켜기
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/uploads/**").permitAll()
-                        .requestMatchers("/api/v1/auth/me").authenticated()
-                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/signup",
-                                "/api/v1/auth/refresh", "/api/v1/auth/logout",
-                                "/api/v1/auth/check-email",
-                                "/api/v1/auth/find-email",
-                                "/api/v1/auth/password-reset/**").permitAll()
+                        .requestMatchers("/api/auth/me").authenticated()
+                        .requestMatchers("/api/auth/login", "/api/auth/signup",
+                                "/api/auth/refresh", "/api/auth/logout",
+                                "/api/auth/check-email",
+                                "/api/auth/find-email",
+                                "/api/auth/password-reset/**",
+                                "/user/**").permitAll()
                         .requestMatchers("/api/public/**", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
                         .anyRequest().authenticated()
                 )
@@ -92,21 +91,4 @@ public class SecurityConfig {
         return new JwtAccessDeniedHandler();
     }
 
-  @Bean
-  public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(List.of("http://localhost:3000"));
-    config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
-    config.setAllowedHeaders(List.of("*"));
-    config.setAllowCredentials(true);
-
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", config);
-    return source;
-  }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
 }

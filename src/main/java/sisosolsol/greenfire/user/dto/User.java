@@ -24,4 +24,5 @@ public class User {
     private String phone;
     private UserStatus status;
     private String profileImage;
+    private String coverImage;
 }

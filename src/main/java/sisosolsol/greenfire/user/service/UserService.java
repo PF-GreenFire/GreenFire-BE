@@ -23,14 +23,7 @@ import sisosolsol.greenfire.user.dto.UpdateUserCommand;
 import sisosolsol.greenfire.user.dto.User;
 import sisosolsol.greenfire.user.dto.UserProfileDTO;
 import sisosolsol.greenfire.user.dto.UpdateUserDTO;
-
 import sisosolsol.greenfire.user.exception.UserNotFoundException;
-import sisosolsol.greenfire.user.model.dao.UserMapper;
-import sisosolsol.greenfire.user.model.dto.UserDTO;
-import sisosolsol.greenfire.user.model.dto.UserUpdateDTO;
-
-import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
