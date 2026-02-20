@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/post")
+@RequestMapping("/api/post")
 public class PostController {
 
     private final PostService postService;

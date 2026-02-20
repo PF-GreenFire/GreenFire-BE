@@ -23,14 +23,14 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/notices")
+@RequestMapping("/api/notices")
 public class NoticeController {
 
     private final NoticeService noticeService;
 
     /**
      * 공지사항 목록 조회
-     * GET /api/v1/notices?page=1&limit=20&category=NOTICE&searchKeyword=검색어
+     * GET /api/notices?page=1&limit=20&category=NOTICE&searchKeyword=검색어
      */
     @GetMapping
     public ResponseEntity<NoticePageResponse> getNoticeList(
@@ -47,7 +47,7 @@ public class NoticeController {
 
     /**
      * 공지사항 상세 조회
-     * GET /api/v1/notices/{noticeCode}?userCode=UUID
+     * GET /api/notices/{noticeCode}?userCode=UUID
      */
     @GetMapping("/{noticeCode}")
     public ResponseEntity<NoticeDetailResponse> getNoticeDetail(
@@ -60,7 +60,7 @@ public class NoticeController {
 
     /**
      * 조회수 증가
-     * POST /api/v1/notices/{noticeCode}/view
+     * POST /api/notices/{noticeCode}/view
      * - 로그인 사용자: userCode 기반 중복 방지
      * - 비로그인 사용자: IP 기반 중복 방지
      */
@@ -108,7 +108,7 @@ public class NoticeController {
 
     /**
      * 관련 공지사항 조회
-     * GET /api/v1/notices/{noticeCode}/related?limit=5
+     * GET /api/notices/{noticeCode}/related?limit=5
      */
     @GetMapping("/{noticeCode}/related")
     public ResponseEntity<List<NoticeListResponse>> getRelatedNotices(
@@ -121,7 +121,7 @@ public class NoticeController {
 
     /**
      * 최신 중요 공지사항 조회 (미리보기용)
-     * GET /api/v1/notices/latest-important
+     * GET /api/notices/latest-important
      */
     @GetMapping("/latest-important")
     public ResponseEntity<NoticeDetailResponse> getLatestImportantNotice() {
@@ -131,7 +131,7 @@ public class NoticeController {
 
     /**
      * 공지사항 생성 (관리자)
-     * POST /api/v1/notices
+     * POST /api/notices
      */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -154,7 +154,7 @@ public class NoticeController {
 
     /**
      * 공지사항 수정 (관리자)
-     * PUT /api/v1/notices/{noticeCode}
+     * PUT /api/notices/{noticeCode}
      */
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/{noticeCode}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -177,7 +177,7 @@ public class NoticeController {
 
     /**
      * 공지사항 삭제 (관리자)
-     * DELETE /api/v1/notices/{noticeCode}
+     * DELETE /api/notices/{noticeCode}
      */
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{noticeCode}")

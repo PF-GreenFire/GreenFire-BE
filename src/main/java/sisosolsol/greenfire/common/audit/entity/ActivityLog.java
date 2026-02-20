@@ -12,7 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "activity_logs", indexes = {
-        @Index(name = "idx_activity_user_created", columnList = "user_id, created_at"),
+        @Index(name = "idx_activity_user_created", columnList = "user_code, created_at"),
         @Index(name = "idx_activity_resource", columnList = "resource_type, resource_id, action_type"),
         @Index(name = "idx_activity_trending", columnList = "resource_type, action_type, created_at")
 })
@@ -22,7 +22,7 @@ public class ActivityLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id")
+    @Column(name = "user_code")
     private UUID userId;
 
     @Enumerated(EnumType.STRING)

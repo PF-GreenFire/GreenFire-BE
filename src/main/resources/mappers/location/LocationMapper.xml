@@ -19,7 +19,7 @@
                 SELECT
                     location_code
                 FROM
-                    tbl_location
+                    location
                 WHERE
                     latitude = #{latitude} AND longitude = #{longitude}
             ),0
@@ -29,7 +29,7 @@
     <!-- 초록불 장소 신청 등록시 지역 정보 등록  -->
     <insert id="registLocation" useGeneratedKeys="true" keyProperty="locationCode">
         INSERT INTO
-            tbl_location (address, latitude, longitude, area_code)
+            location (address, latitude, longitude, area_code)
         VALUES
             (#{address}, #{latitude}, #{longitude}, #{areaCode})
     </insert>

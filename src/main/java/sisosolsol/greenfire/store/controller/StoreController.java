@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/store")
+@RequestMapping("/api/store")
 public class StoreController {
 
     private  final StoreService storeService;
@@ -45,7 +45,7 @@ public class StoreController {
     @PostMapping("/apply")
     public ResponseEntity<String> createApplyStore(@RequestBody StoreCreateDTO storeCreateDTO){
         int storeCode = storeService.registApplyStore(storeCreateDTO);
-        return ResponseEntity.created(URI.create("/api/v1/store/detail/" + storeCode)).build();
+        return ResponseEntity.created(URI.create("/api/store/detail/" + storeCode)).build();
     }
 
     // 초록불 회원 본인이 신청한 장소 목록 페이징 조회

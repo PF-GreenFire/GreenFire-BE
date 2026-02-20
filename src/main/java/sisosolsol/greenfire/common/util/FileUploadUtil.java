@@ -35,6 +35,9 @@ public class FileUploadUtil {
     @Value("${file.upload.local.challenge-path}")
     private String challengePath;
 
+    @Value("${file.upload.local.profile-path:profile}")
+    private String profilePath;
+
     @Value("${file.upload.max-size}")
     private long maxSize;
 
@@ -152,6 +155,8 @@ public class FileUploadUtil {
                 return noticePath;
             case CHALLENGE:
                 return challengePath;
+            case PROFILE:
+                return profilePath;
             default:
                 throw new CustomException(ExceptionCode.FILE_UPLOAD_ERROR);
         }

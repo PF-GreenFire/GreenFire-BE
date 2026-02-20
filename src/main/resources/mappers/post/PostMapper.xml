@@ -32,9 +32,9 @@
             p.thumbnail,
             p.post_type
         FROM
-            tbl_post p
+            post p
             JOIN
-            tbl_user u on (p.user_code = u.user_code)
+            user u on (p.user_code = u.user_code)
         WHERE
             p.post_status = 'ACTIVE'
         AND
@@ -59,11 +59,11 @@
             i.path,
             i.file_name
         FROM
-            tbl_post p
-            JOIN tbl_user u on (p.user_code = u.user_code)
-            JOIN tbl_store s on (p.store_code = s.store_code)
-            JOIN tbl_challenge c on (p.challenge_code = c.challenge_code)
-            LEFT JOIN tbl_image i on (p.post_code = i.post_code)
+            post p
+            JOIN user u on (p.user_code = u.user_code)
+            JOIN store s on (p.store_code = s.store_code)
+            JOIN challenge c on (p.challenge_code = c.challenge_code)
+            LEFT JOIN image i on (p.post_code = i.post_code)
         WHERE
             p.post_status = 'ACTIVE'
         AND
@@ -74,7 +74,7 @@
 
     <insert id="registChallengePost" useGeneratedKeys="true" keyProperty="post.postCode">
         INSERT INTO
-        tbl_post (post_content, post_type, challenge_code, thumbnail, user_code)
+        post (post_content, post_type, challenge_code, thumbnail, user_code)
         VALUES
         (#{post.postContent}, #{post.postType, typeHandler=sisosolsol.greenfire.common.handler.PostTypeHandler}, #{post.challengeCode},
         #{post.thumbnail}, #{userId})
@@ -82,7 +82,7 @@
 
     <update id="updatePost">
         UPDATE
-            tbl_post
+            post
         SET
             post_content = #{post.postContent},
             post_type = #{post.postType, typeHandler=sisosolsol.greenfire.common.handler.PostTypeHandler},
@@ -105,7 +105,7 @@
 
     <update id="deletePost">
         UPDATE
-            tbl_post
+            post
         SET
             post_status = 'DELETED'
         WHERE

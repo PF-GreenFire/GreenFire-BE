@@ -13,7 +13,7 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "tbl_notice_view",
+@Table(name = "notice_view",
         indexes = {
                 @Index(name = "idx_notice_view_notice_user", columnList = "notice_code, user_code"),
                 @Index(name = "idx_notice_view_notice_ip", columnList = "notice_code, ip_address"),
