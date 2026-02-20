@@ -17,6 +17,7 @@ import sisosolsol.greenfire.common.exception.type.ExceptionCode;
 import sisosolsol.greenfire.user.dao.UserMapper;
 import sisosolsol.greenfire.user.dto.ChallengeSummaryDTO;
 import sisosolsol.greenfire.user.dto.EchoMemorySummaryDTO;
+import sisosolsol.greenfire.user.dto.FriendDTO;
 import sisosolsol.greenfire.user.dto.PasswordChangeRequest;
 import sisosolsol.greenfire.user.dto.FileStorage;
 import sisosolsol.greenfire.user.dto.ScrapbookSummaryDTO;
@@ -25,7 +26,6 @@ import sisosolsol.greenfire.user.dto.UpdateUserCommand;
 import sisosolsol.greenfire.user.dto.User;
 import sisosolsol.greenfire.user.dto.UserProfileDTO;
 import sisosolsol.greenfire.user.dto.UpdateUserDTO;
-import sisosolsol.greenfire.user.exception.UserNotFoundException;
 
 import java.util.regex.Pattern;
 
@@ -130,6 +130,14 @@ public class UserService {
         return userProfileDTO;
     }
 
+    public List<ChallengeDTO> getScrapChallenges(UUID userCode) {
+        return userMapper.getScrapChallenges(userCode);
+    }
+
+    public List<FriendDTO> getScrapFriends(UUID userCode) {
+        return userMapper.getScrapFriends(userCode);
+    }
+
     @Transactional
     public void changePassword(UUID userCode, PasswordChangeRequest request) {
         User user = userMapper.findByUserCode(userCode);
@@ -168,9 +176,5 @@ public class UserService {
 
         userMapper.changeCoverImage(userCode, storageKey);
         return storageKey;
-    }
-
-    public List<ChallengeDTO> getScrapChallenges(UUID userCode) {
-        return userMapper.getScrapChallenges(userCode);
     }
 }

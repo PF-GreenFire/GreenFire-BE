@@ -42,6 +42,25 @@ public class UserController {
         return ResponseEntity.ok(userService.getScrapChallenges(loginUser.userId()));
     }
 
+    @GetMapping("/scraps/challenges/{challengeCode}/thumbnail")
+    public ResponseEntity<Resource> getChallengeThumbnail(@PathVariable("challengeCode") String challengeCode) {
+        Path filePath = Paths.get(uploadAllowConfig.getDirectory(), "challenges/" + challengeCode, "thumbnail.jpg");
+        Resource resource = new FileSystemResource(filePath);
+
+        if (!resource.exists()) {
+            throw new IllegalArgumentException("등록된 이미지가 없습니다.");
+        }
+
+        return ResponseEntity.ok()
+            .contentType(MediaType.IMAGE_JPEG)
+            .body(resource);
+    }
+
+    @GetMapping("/scraps/friends")
+    public ResponseEntity getScrapFriends(@AuthenticationPrincipal AuthUser loginUser) {
+        return ResponseEntity.ok(userService.getScrapFriends(loginUser.userId()));
+    }
+
     @GetMapping("/me")
     public ResponseEntity<User> getUserProfile(@AuthenticationPrincipal AuthUser loginUser) {
         User user = userService.getUserProfile(loginUser.userId());
@@ -120,4 +139,5 @@ public class UserController {
         String coverStorageKey = userService.changeCoverImage(loginUser.userId(), request, file);
         return ResponseEntity.ok(coverStorageKey);
     }
+
 }

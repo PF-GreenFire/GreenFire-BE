@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import sisosolsol.greenfire.challenge.model.dto.ChallengeDTO;
+import sisosolsol.greenfire.user.dto.FriendDTO;
 import sisosolsol.greenfire.user.dto.ScrapbookSummaryDTO;
 import sisosolsol.greenfire.user.dto.UpdateUserCommand;
 import sisosolsol.greenfire.user.dto.User;
@@ -37,4 +38,6 @@ public interface UserMapper {
     void changeCoverImage(@Param("userCode") UUID userCode, @Param("storageKey") String storageKey);
 
     List<ChallengeDTO> getScrapChallenges(@Param("userCode") UUID userCode);
+
+    List<FriendDTO> getScrapFriends(UUID userCode);
 }

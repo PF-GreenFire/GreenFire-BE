@@ -22,7 +22,8 @@
     <select id="findUserSummary" resultMap="userResultMap">
         SELECT
             user_code,
-            nickname
+            nickname,
+            name
         FROM
             users u
         WHERE
@@ -141,10 +142,36 @@
         SELECT
             challenge_code as challengeCode,
             challenge_title as challengeTitle,
-            thumbnail_url as thumbnailUrl
+            thumbnail_url as thumbnailUrl,
+            host_user as hostUser
         FROM
             challenge
         WHERE
             host_user = #{userCode}
+    </select>
+
+    <select id="getScrapFriends" resultType="sisosolsol.greenfire.user.dto.FriendDTO">
+        SELECT
+            u.user_code as userCode,
+            u.nickname as nickname,
+            u.profile_image as profileImage,
+            (followings.user_code IS NOT NULL) AS isFollowing,
+            (followers.user_code IS NOT NULL) AS isFollower
+        FROM
+            users u
+        LEFT JOIN
+            user_follows followings
+        ON
+            followings.target_user = u.user_code
+        AND
+            followings.user_code = #{currentUserCode}
+        LEFT JOIN
+            user_follows followers
+        ON
+            followers.user_code = u.user_code AND followers.target_user = #{currentUserCode}
+        WHERE
+            followings.user_code IS NOT NULL
+        OR
+            followers.user_code IS NOT NULL
     </select>
 </mapper>
