@@ -37,4 +37,7 @@ public interface StoreMapper {
     // 관리자 장소 상태 변경
     void updateStoreStatus(@Param("storeCode") int storeCode, @Param("storeUpdateStatusDTO") StoreUpdateStatusDTO storeUpdateStatusDTO);
 
+    List<StoreCategory> getStoreCategories();
+
+    String findImagePathByImageCode(@Param("imageCode") int imageCode);
 }

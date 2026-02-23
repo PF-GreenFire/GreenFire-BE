@@ -12,8 +12,11 @@ public class StoreListDTO {
     // 초록불 메인 장소 목록 조회용 DTO
     private Integer storeCode;
     private String storeName;
-    private String storeCategory;
+    private int storeCategory;
+    private String categoryName;
+    private String description;
     private String address;
+    private int imageCode;
     private double latitude;
     private double longitude;
     private String areaCode;

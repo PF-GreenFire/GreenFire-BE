@@ -123,4 +123,11 @@ public class StoreService {
         }
     }
 
+    public List<StoreCategory> getStoreCategories() {
+        return storeMapper.getStoreCategories();
+    }
+
+    public String findImagePathByImageCode(int imageCode) {
+        return storeMapper.findImagePathByImageCode(imageCode);
+    }
 }

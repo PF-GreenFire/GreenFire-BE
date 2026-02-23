@@ -6,8 +6,10 @@
             <id property="storeCode" column="store_code"/>
             <result property="storeName" column="store_name"/>
             <result property="storeCategory" column="store_category_code"/>
+            <result property="categoryName" column="store_category_name"/>
             <result property="description" column="description"/>
             <result property="address" column="address"/>
+            <result property="imageCode" column="image_code"/>
             <result property="latitude" column="latitude"/>
             <result property="longitude" column="longitude"/>
             <result property="areaCode" column="area_code"/>
@@ -39,6 +41,14 @@
             </collection>
         </resultMap>
 
+    <select id="getStoreCategories" resultType="sisosolsol.greenfire.store.model.dto.StoreCategory">
+        SELECT
+            store_category_code as categoryCode,
+            store_category_name as categoryName
+        FROM
+            store_category
+    </select>
+
         <!--  초록불 장소 목록 조회 TODO: 현재 위치 정보를 기반으로 반경 지도 목록을 보여주는 것으로 수정 예정 -->
         <select id="findStoreList" resultMap="storeListResultMap">
             SELECT
@@ -47,6 +57,7 @@
                 s.store_category_code,
                 s.description,
                 l.address,
+                i.image_code,
                 l.latitude,
                 l.longitude,
                 l.area_code
@@ -56,9 +67,22 @@
                 location l
             ON
                 s.location_code = l.location_code
+            LEFT JOIN
+                image i
+            ON
+                i.target_type = 'STORE' AND s.store_code::text = i.target_code
             WHERE
                 s.store_status = 'APPROVE'
         </select>
+
+    <select id="findImagePathByImageCode">
+        SELECT
+            path
+        FROM
+            image
+        WHERE
+            image_code = #{imageCode}
+    </select>
 
         <!-- 관리자 초록불 장소 상태에 따른 목록 페이징 조회를 위한 토탈 갯수 조회 -->
         <select id="countStoresByStoreStatus" resultType="int">

@@ -21,13 +21,6 @@ public class StoreController {
 
     private  final StoreService storeService;
 
-    // 초록불 메인 장소 목록 조회 TODO: 현재 위치 정보를 기반으로 반경 지도 목록을 보여주는 것으로 수정 예정, 썸네일이 필요할것 같은 예감인데 order값 1인 것으로 할지 썸네일 만들지 추후 협의 및 적용 예정
-    @GetMapping
-    public ResponseEntity<List<StoreListDTO>> getStoreList() {
-        List<StoreListDTO> storeList = storeService.getStoreList();
-        return ResponseEntity.ok(storeList);
-    }
-
     // 관리자 초록불 장소 상태에 따른 목록 페이징 조회 [신청 대기, 신청 승인]
     // TODO: 추후 관리자만 목록 조회 할수 있겠금 권한 체크 예정 / 현재 데이터 3개 조회 되므로 limit 2로 임시 지정 -> 추후 수정 예정/ 추후 신청 거절건에 관해 조회 할 수도 있어서 결정 되면, WAITING, APPROVE 외의 값에 대한 예외 처리 예정
     @GetMapping("/{storeStatus}/list")

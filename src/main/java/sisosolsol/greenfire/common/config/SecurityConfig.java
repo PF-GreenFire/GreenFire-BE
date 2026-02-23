@@ -51,7 +51,7 @@ public class SecurityConfig {
                                 "/api/auth/check-email",
                                 "/api/auth/find-email",
                                 "/api/auth/password-reset/**",
-                                "/stores").permitAll()
+                                "/location/**").permitAll()
                         .requestMatchers("/api/public/**", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
                         .anyRequest().authenticated()
                 )
