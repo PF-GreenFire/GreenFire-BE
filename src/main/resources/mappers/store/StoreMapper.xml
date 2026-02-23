@@ -4,13 +4,13 @@
     <mapper namespace="sisosolsol.greenfire.store.model.dao.StoreMapper">
         <resultMap id="storeListResultMap" type="sisosolsol.greenfire.store.model.dto.StoreListDTO">
             <id property="storeCode" column="store_code"/>
-            <result property="createdAt" column="created_at"/>
             <result property="storeName" column="store_name"/>
-            <result property="storeStatus" column="store_status"/>
-            <result property="storeFoodType" column="store_food_type"/>
-            <result property="storeCategoryName" column="store_category_name"/>
-            <result property="path" column="path"/>
-            <result property="fileName" column="file_name"/>
+            <result property="storeCategory" column="store_category_code"/>
+            <result property="description" column="description"/>
+            <result property="address" column="address"/>
+            <result property="latitude" column="latitude"/>
+            <result property="longitude" column="longitude"/>
+            <result property="areaCode" column="area_code"/>
         </resultMap>
         <resultMap id="applyStoreListResultMap" type="sisosolsol.greenfire.store.model.dto.StoreApplyListDTO">
             <id property="storeCode" column="store_code"/>
@@ -43,19 +43,19 @@
         <select id="findStoreList" resultMap="storeListResultMap">
             SELECT
                 s.store_code,
-                s.created_at,
                 s.store_name,
-                s.store_status,
-                s.store_food_type,
-                c.store_category_name,
-                i.path,
-                i.file_name
+                s.store_category_code,
+                s.description,
+                l.address,
+                l.latitude,
+                l.longitude,
+                l.area_code
             FROM
                 store s
             LEFT JOIN
-                store_category c ON s.store_category_code = c.store_category_code
-            LEFT JOIN
-                image i ON i.store_code = s.store_code
+                location l
+            ON
+                s.location_code = l.location_code
             WHERE
                 s.store_status = 'APPROVE'
         </select>

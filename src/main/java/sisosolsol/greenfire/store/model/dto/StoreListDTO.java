@@ -11,12 +11,10 @@ public class StoreListDTO {
 
     // 초록불 메인 장소 목록 조회용 DTO
     private Integer storeCode;
-    private OffsetDateTime createdAt;
     private String storeName;
-    private StoreStatus storeStatus;
-    private StoreFoodType storeFoodType;
-    private String storeCategoryName;
-    private String path;
-    private String fileName;
-
+    private String storeCategory;
+    private String address;
+    private double latitude;
+    private double longitude;
+    private String areaCode;
 }

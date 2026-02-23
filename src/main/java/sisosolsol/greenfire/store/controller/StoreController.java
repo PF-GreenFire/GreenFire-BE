@@ -16,13 +16,13 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/store")
+@RequestMapping("/stores")
 public class StoreController {
 
     private  final StoreService storeService;
 
     // 초록불 메인 장소 목록 조회 TODO: 현재 위치 정보를 기반으로 반경 지도 목록을 보여주는 것으로 수정 예정, 썸네일이 필요할것 같은 예감인데 order값 1인 것으로 할지 썸네일 만들지 추후 협의 및 적용 예정
-    @GetMapping("/list")
+    @GetMapping
     public ResponseEntity<List<StoreListDTO>> getStoreList() {
         List<StoreListDTO> storeList = storeService.getStoreList();
         return ResponseEntity.ok(storeList);
