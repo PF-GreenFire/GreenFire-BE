@@ -40,4 +40,6 @@ public interface UserMapper {
     List<ChallengeDTO> getScrapChallenges(@Param("userCode") UUID userCode);
 
     List<FriendDTO> getScrapFriends(UUID userCode);
+
+    String findImagePathByImageCode(@Param("imageCode") int imageCode);
 }

@@ -1,5 +1,7 @@
 package sisosolsol.greenfire.user.service;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +13,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 import sisosolsol.greenfire.challenge.model.dto.ChallengeDTO;
+import sisosolsol.greenfire.common.config.UploadAllowConfig;
 import sisosolsol.greenfire.common.exception.BadRequestException;
 import sisosolsol.greenfire.common.exception.NotFoundException;
 import sisosolsol.greenfire.common.exception.type.ExceptionCode;
@@ -38,6 +41,7 @@ public class UserService {
             "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$"
     );
 
+    private final UploadAllowConfig uploadAllowConfig;
     private final FileStorage fileStorage;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
@@ -176,5 +180,24 @@ public class UserService {
 
         userMapper.changeCoverImage(userCode, storageKey);
         return storageKey;
+    }
+
+    public String findImagePathByImageCode(int profileImageCode) {
+        return userMapper.findImagePathByImageCode(profileImageCode);
+    }
+
+    public Path getProfileImage(int profileImageCode) {
+        return getPath(profileImageCode);
+    }
+
+    public Path getCoverImage(int coverImageCode) {
+        return getPath(coverImageCode);
+    }
+
+    private Path getPath(int coverImageCode) {
+        String storedKey = userMapper.findImagePathByImageCode(coverImageCode);
+
+        Path filePath = Paths.get(uploadAllowConfig.getDirectory(), storedKey);
+        return filePath;
     }
 }

@@ -67,9 +67,9 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
-    @GetMapping("/me/{userCode}/profile-image")
-    public ResponseEntity<Resource> getProfileImage(@PathVariable("userCode") String userCode) {
-        Path filePath = Paths.get(uploadAllowConfig.getDirectory(), "users/" + userCode, "profile.jpg");
+    @GetMapping("/me/profile-image/{profileImageCode}")
+    public ResponseEntity<Resource> getProfileImage(@PathVariable("profileImageCode") int profileImageCode) {
+        Path filePath = userService.getProfileImage(profileImageCode);
         Resource resource = new FileSystemResource(filePath);
 
         if (!resource.exists()) {
@@ -81,9 +81,9 @@ public class UserController {
             .body(resource);
     }
 
-    @GetMapping("/me/{userCode}/cover-image")
-    public ResponseEntity<Resource> getCoverImage(@PathVariable("userCode") String userCode) {
-        Path filePath = Paths.get(uploadAllowConfig.getDirectory(), "users/" + userCode, "cover.jpg");
+    @GetMapping("/me/cover-image/{coverImageCode}")
+    public ResponseEntity<Resource> getCoverImage(@PathVariable("coverImageCode") int coverImageCode) {
+        Path filePath = userService.getCoverImage(coverImageCode);
         Resource resource = new FileSystemResource(filePath);
 
         if (!resource.exists()) {
