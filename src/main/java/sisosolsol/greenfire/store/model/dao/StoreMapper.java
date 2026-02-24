@@ -29,7 +29,7 @@ public interface StoreMapper {
     List<StoreApplyListDTO> findApplyStoreListByUserCode(@Param("criteria") SelectCriteria selectCriteria, @Param("userCode")UUID userCode);
 
     // 장소 상세 정보 조회
-    StoreDetailDTO findStoreDetailByStoreCode(Integer storeCode);
+    StoreDetailDTO findStoreDetailByStoreCode(@Param("storeCode") Integer storeCode);
 
     // 관리자 장소 정보 수정
     void updateStore(@Param("storeCode") int storeCode, @Param("updateDTO") StoreCreateDTO updateDTO, @Param("locationCode") int locationCode);

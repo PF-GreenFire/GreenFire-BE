@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import sisosolsol.greenfire.common.config.UploadAllowConfig;
 import sisosolsol.greenfire.common.security.model.AuthUser;
+import sisosolsol.greenfire.store.model.dto.StoreDetailDTO;
 import sisosolsol.greenfire.store.model.dto.StoreListDTO;
 import sisosolsol.greenfire.store.service.StoreService;
 
@@ -53,5 +54,12 @@ public class LocationController {
         return ResponseEntity.ok()
             .contentType(MediaType.IMAGE_JPEG)
             .body(resource);
+    }
+
+    // 장소 상세 정보 조회
+    @GetMapping("/stores/{storeCode}")
+    public ResponseEntity<StoreDetailDTO> getStoreDetail (@PathVariable Integer storeCode) {
+        StoreDetailDTO storeDetail = storeService.getStoreDetailByStoreCode(storeCode);
+        return ResponseEntity.ok(storeDetail);
     }
 }

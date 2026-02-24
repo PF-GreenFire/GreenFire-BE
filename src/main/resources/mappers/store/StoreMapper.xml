@@ -24,7 +24,7 @@
         <resultMap id="storeDetailResultMap" type="sisosolsol.greenfire.store.model.dto.StoreDetailDTO">
             <id property="storeCode" column="store_code" />
             <result property="storeName" column="store_name" />
-            <result property="storeStatus" column="store_status" />
+            <result property="storeStatus" column="store_status"/>
             <result property="storePhone" column="store_phone" />
             <result property="storeLink" column="store_link" />
             <result property="storeBusinessHours" column="store_business_hours" />
@@ -37,7 +37,6 @@
             <collection property="images" ofType="sisosolsol.greenfire.image.model.dto.ImageDTO">
                 <id property="imageCode" column="image_code" />
                 <result property="path" column="path" />
-                <result property="fileName" column="file_name" />
             </collection>
         </resultMap>
 
@@ -183,22 +182,28 @@
             s.store_phone,
             s.store_link,
             s.store_business_hours,
-            l.address,
+            CONCAT_WS(' ', l.address, s.detail_address) AS address,
             c.store_category_name,
             s.store_food_type,
             s.detail_address,
             s.description,
             s.store_breaktime_hours,
-            i.path,
-            i.file_name
+            i.image_code,
+            i.path
         FROM
             store s
         LEFT JOIN
-            location l ON s.location_code = l.location_code
+            location l
+        ON
+            s.location_code = l.location_code
         LEFT JOIN
-            store_category c ON s.store_category_code = c.store_category_code
+            store_category c
+        ON
+            s.store_category_code = c.store_category_code
         LEFT JOIN
-            image i ON s.store_code = i.store_code
+            image i
+        ON
+            s.store_code::text = i.target_code AND i.target_type = 'STORE'
         WHERE
             s.store_code = #{storeCode}
     </select>
