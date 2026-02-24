@@ -23,5 +23,6 @@ public class User {
     private Gender gender;
     private String phone;
     private UserStatus status;
-    private String profileImage;
+    private String profileImageCode;
+    private String coverImageCode;
 }

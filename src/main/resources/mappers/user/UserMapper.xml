@@ -15,13 +15,15 @@
         <result property="phone" column="phone"/>
         <result property="status" column="status"/>
         <result property="password" column="password"/>
-        <result property="profileImage" column="profile_key"/>
-        <result property="coverImage" column="cover_image_key"/>
+        <result property="profileImageCode" column="profile_key"/>
+        <result property="coverImageCode" column="cover_image_key"/>
     </resultMap>
 
     <select id="findUserSummary" resultMap="userResultMap">
         SELECT
+            user_code,
             nickname,
+            name,
             profile_key,
             cover_image_key
         FROM
@@ -46,6 +48,15 @@
             users
         WHERE
             user_code = #{userCode}
+    </select>
+
+    <select id="findImagePathByImageCode">
+        SELECT
+            path
+        FROM
+            image
+        WHERE
+            image_code = #{imageCode}
     </select>
 
 <!--    <update id="updateUserProfile">-->
@@ -142,10 +153,36 @@
         SELECT
             challenge_code as challengeCode,
             challenge_title as challengeTitle,
-            thumbnail_url as thumbnailUrl
+            thumbnail_url as thumbnailUrl,
+            host_user as hostUser
         FROM
             challenge
         WHERE
             host_user = #{userCode}
+    </select>
+
+    <select id="getScrapFriends" resultType="sisosolsol.greenfire.user.dto.FriendDTO">
+        SELECT
+            u.user_code as userCode,
+            u.nickname as nickname,
+            u.profile_image as profileImage,
+            (followings.user_code IS NOT NULL) AS isFollowing,
+            (followers.user_code IS NOT NULL) AS isFollower
+        FROM
+            users u
+        LEFT JOIN
+            user_follows followings
+        ON
+            followings.target_user = u.user_code
+        AND
+            followings.user_code = #{currentUserCode}
+        LEFT JOIN
+            user_follows followers
+        ON
+            followers.user_code = u.user_code AND followers.target_user = #{currentUserCode}
+        WHERE
+            followings.user_code IS NOT NULL
+        OR
+            followers.user_code IS NOT NULL
     </select>
 </mapper>

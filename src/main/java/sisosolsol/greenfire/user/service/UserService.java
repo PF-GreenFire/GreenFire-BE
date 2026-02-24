@@ -1,5 +1,7 @@
 package sisosolsol.greenfire.user.service;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -11,12 +13,14 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 import sisosolsol.greenfire.challenge.model.dto.ChallengeDTO;
+import sisosolsol.greenfire.common.config.UploadAllowConfig;
 import sisosolsol.greenfire.common.exception.BadRequestException;
 import sisosolsol.greenfire.common.exception.NotFoundException;
 import sisosolsol.greenfire.common.exception.type.ExceptionCode;
 import sisosolsol.greenfire.user.dao.UserMapper;
 import sisosolsol.greenfire.user.dto.ChallengeSummaryDTO;
 import sisosolsol.greenfire.user.dto.EchoMemorySummaryDTO;
+import sisosolsol.greenfire.user.dto.FriendDTO;
 import sisosolsol.greenfire.user.dto.PasswordChangeRequest;
 import sisosolsol.greenfire.user.dto.FileStorage;
 import sisosolsol.greenfire.user.dto.ScrapbookSummaryDTO;
@@ -37,6 +41,7 @@ public class UserService {
             "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$"
     );
 
+    private final UploadAllowConfig uploadAllowConfig;
     private final FileStorage fileStorage;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
@@ -129,6 +134,14 @@ public class UserService {
         return userProfileDTO;
     }
 
+    public List<ChallengeDTO> getScrapChallenges(UUID userCode) {
+        return userMapper.getScrapChallenges(userCode);
+    }
+
+    public List<FriendDTO> getScrapFriends(UUID userCode) {
+        return userMapper.getScrapFriends(userCode);
+    }
+
     @Transactional
     public void changePassword(UUID userCode, PasswordChangeRequest request) {
         User user = userMapper.findByUserCode(userCode);
@@ -169,7 +182,22 @@ public class UserService {
         return storageKey;
     }
 
-    public List<ChallengeDTO> getScrapChallenges(UUID userCode) {
-        return userMapper.getScrapChallenges(userCode);
+    public String findImagePathByImageCode(int profileImageCode) {
+        return userMapper.findImagePathByImageCode(profileImageCode);
+    }
+
+    public Path getProfileImage(int profileImageCode) {
+        return getPath(profileImageCode);
+    }
+
+    public Path getCoverImage(int coverImageCode) {
+        return getPath(coverImageCode);
+    }
+
+    private Path getPath(int coverImageCode) {
+        String storedKey = userMapper.findImagePathByImageCode(coverImageCode);
+
+        Path filePath = Paths.get(uploadAllowConfig.getDirectory(), storedKey);
+        return filePath;
     }
 }
