@@ -29,8 +29,8 @@ public class StoreService {
     private final ImageService imageService;
 
     // 초록불 메인 장소 목록 조회 TODO: 현재 위치 정보를 기반으로 반경 지도 목록을 보여주는 것으로 수정 예정
-    public List<StoreListDTO> getStoreList() {
-        return storeMapper.findStoreList();
+    public List<StoreListDTO> getStoreList(UUID userCode) {
+        return storeMapper.findStoreList(userCode);
     }
 
     // 관리자 초록불 장소 상태에 따른 목록 페이징 조회 [신청 대기, 신청 승인]
@@ -80,8 +80,8 @@ public class StoreService {
     }
 
     // 장소 상세 정보 조회
-    public StoreDetailDTO getStoreDetailByStoreCode(Integer storeCode) {
-        StoreDetailDTO storeDetail = storeMapper.findStoreDetailByStoreCode(storeCode);
+    public StoreDetailDTO getStoreDetailByStoreCode(UUID userCode, Integer storeCode) {
+        StoreDetailDTO storeDetail = storeMapper.findStoreDetailByStoreCode(userCode, storeCode);
         return storeDetail;
     }
 
@@ -123,4 +123,19 @@ public class StoreService {
         }
     }
 
+    public List<StoreCategory> getStoreCategories() {
+        return storeMapper.getStoreCategories();
+    }
+
+    public String findImagePathByImageCode(int imageCode) {
+        return storeMapper.findImagePathByImageCode(imageCode);
+    }
+
+    public void storeLike(UUID userCode, int storeCode) {
+        storeMapper.storeLike(userCode, storeCode);
+    }
+
+    public void deleteStoreLike(UUID userCode, int storeCode) {
+        storeMapper.deleteStoreLike(userCode, storeCode);
+    }
 }

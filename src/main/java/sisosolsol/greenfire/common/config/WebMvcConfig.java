@@ -24,7 +24,5 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:" + absolutePath + "/")
                 .setCachePeriod(3600);  // 1시간 캐싱
-
-        System.out.println("📁 정적 리소스 경로 설정: " + absolutePath);
     }
 }
