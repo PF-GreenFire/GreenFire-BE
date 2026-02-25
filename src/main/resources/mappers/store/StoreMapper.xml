@@ -6,14 +6,14 @@
             <id property="storeCode" column="store_code"/>
             <result property="storeName" column="store_name"/>
             <result property="storeCategory" column="store_category_code"/>
-            <result property="categoryName" column="store_category_name"/>
             <result property="description" column="description"/>
+            <result property="liked" column="liked"/>
             <result property="address" column="address"/>
             <result property="imageCode" column="image_code"/>
             <result property="latitude" column="latitude"/>
             <result property="longitude" column="longitude"/>
-            <result property="areaCode" column="area_code"/>
         </resultMap>
+
         <resultMap id="applyStoreListResultMap" type="sisosolsol.greenfire.store.model.dto.StoreApplyListDTO">
             <id property="storeCode" column="store_code"/>
             <result property="createdAt" column="created_at"/>
@@ -21,19 +21,23 @@
             <result property="storeStatus" column="store_status"/>
             <result property="areaName" column="area_name"/>
         </resultMap>
+
         <resultMap id="storeDetailResultMap" type="sisosolsol.greenfire.store.model.dto.StoreDetailDTO">
             <id property="storeCode" column="store_code" />
             <result property="storeName" column="store_name" />
+            <result property="storeCategoryCode" column="store_category_code" />
+            <result property="storeCategoryName" column="store_category_name" />
             <result property="storeStatus" column="store_status"/>
             <result property="storePhone" column="store_phone" />
             <result property="storeLink" column="store_link" />
             <result property="storeBusinessHours" column="store_business_hours" />
             <result property="address" column="address" />
-            <result property="storeCategoryName" column="store_category_name" />
-            <result property="storeFoodType" column="store_food_type" />
-            <result property="detailAddress" column="detail_address" />
             <result property="description" column="description" />
             <result property="storeBreaktimeHours" column="store_breaktime_hours" />
+            <result property="likeCount" column="like_count" />
+            <result property="liked" column="liked" />
+            <result property="latitude" column="latitude" />
+            <result property="longitude" column="longitude" />
             <collection property="images" ofType="sisosolsol.greenfire.image.model.dto.ImageDTO">
                 <id property="imageCode" column="image_code" />
                 <result property="path" column="path" />
@@ -48,20 +52,24 @@
             store_category
     </select>
 
-        <!--  초록불 장소 목록 조회 TODO: 현재 위치 정보를 기반으로 반경 지도 목록을 보여주는 것으로 수정 예정 -->
+    <!--  초록불 장소 목록 조회 TODO: 현재 위치 정보를 기반으로 반경 지도 목록을 보여주는 것으로 수정 예정 -->
         <select id="findStoreList" resultMap="storeListResultMap">
             SELECT
                 s.store_code,
                 s.store_name,
                 s.store_category_code,
                 s.description,
+                MAX(CASE WHEN sl.user_code = #{userCode} THEN 1 ELSE 0 END) AS liked,
                 l.address,
                 i.image_code,
                 l.latitude,
-                l.longitude,
-                l.area_code
+                l.longitude
             FROM
                 store s
+            LEFT JOIN
+                store_like sl
+            ON
+                s.store_code = sl.store_code
             LEFT JOIN
                 location l
             ON
@@ -72,6 +80,8 @@
                 i.target_type = 'STORE' AND s.store_code::text = i.target_code
             WHERE
                 s.store_status = 'APPROVE'
+            GROUP BY
+                s.store_code,  l.address, i.image_code, l.latitude, l.longitude, l.area_code
         </select>
 
     <select id="findImagePathByImageCode">
@@ -178,20 +188,44 @@
         SELECT
             s.store_code,
             s.store_name,
+            s.store_category_code,
+            c.store_category_name,
             s.store_status,
             s.store_phone,
             s.store_link,
             s.store_business_hours,
             CONCAT_WS(' ', l.address, s.detail_address) AS address,
-            c.store_category_name,
-            s.store_food_type,
             s.detail_address,
             s.description,
             s.store_breaktime_hours,
+            (
+            SELECT
+                COUNT(like_code)
+            FROM
+                store_like sl
+            WHERE
+                sl.store_code = #{storeCode}
+            ) AS like_count,
+            EXISTS (
+                SELECT
+                    1
+                FROM
+                    store_like sl
+                WHERE
+                    sl.store_code = #{storeCode}
+                AND
+                    sl.user_code = #{userCode}
+            ) AS liked,
+            l.latitude,
+            l.longitude,
             i.image_code,
             i.path
         FROM
             store s
+        LEFT JOIN
+            store_like sl
+        ON
+            s.store_code = sl.store_code
         LEFT JOIN
             location l
         ON
@@ -236,5 +270,22 @@
         WHERE
             store_code = #{storeCode}
     </update>
-      
+
+    <insert id="storeLike">
+        INSERT INTO
+            store_like(store_code, user_code)
+        VALUES
+            (
+                #{storeCode},
+                #{userCode}
+            )
+    </insert>
+
+    <delete id="deleteStoreLike">
+        DELETE FROM store_like
+        WHERE
+            store_code = #{storeCode}
+        AND
+            user_code = #{userCode}
+    </delete>
 </mapper>

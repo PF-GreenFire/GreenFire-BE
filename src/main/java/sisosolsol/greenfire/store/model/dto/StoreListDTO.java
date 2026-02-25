@@ -13,11 +13,10 @@ public class StoreListDTO {
     private Integer storeCode;
     private String storeName;
     private int storeCategory;
-    private String categoryName;
     private String description;
+    private boolean liked;
     private String address;
     private int imageCode;
     private double latitude;
     private double longitude;
-    private String areaCode;
 }

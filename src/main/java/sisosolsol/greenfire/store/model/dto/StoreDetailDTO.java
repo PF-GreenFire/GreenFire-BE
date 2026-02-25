@@ -23,11 +23,15 @@ public class StoreDetailDTO {
     private String storeLink;
     private String storeBusinessHours;
     private String address;
+    private int storeCategoryCode;
     private String storeCategoryName;
     private StoreFoodType storeFoodType;
-    private String detailAddress;
     private String description;
     private String storeBreaktimeHours;
+    private int likeCount;
+    private boolean liked;
+    private double latitude;
+    private double longitude;
     private List<ImageDTO> images;
 
 }

@@ -2,7 +2,9 @@ package sisosolsol.greenfire.store.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import sisosolsol.greenfire.common.security.model.AuthUser;
 import sisosolsol.greenfire.store.model.dto.StoreCreateDTO;
 import sisosolsol.greenfire.store.model.dto.StoreDetailDTO;
 import sisosolsol.greenfire.store.model.dto.StoreListDTO;
@@ -57,8 +59,9 @@ public class StoreController {
 
     // 장소 상세 정보 조회
     @GetMapping("/detail/{storeCode}")
-    public ResponseEntity<StoreDetailDTO> getStoreDetail (@PathVariable Integer storeCode) {
-        StoreDetailDTO storeDetail = storeService.getStoreDetailByStoreCode(storeCode);
+    public ResponseEntity<StoreDetailDTO> getStoreDetail (@PathVariable("storeCode") Integer storeCode, @AuthenticationPrincipal AuthUser user) {
+//        StoreDetailDTO storeDetail = storeService.getStoreDetailByStoreCode(user.userId(), storeCode);
+        StoreDetailDTO storeDetail = storeService.getStoreDetailByStoreCode(UUID.fromString("dc31ee31-5f6f-4538-893a-462fabec8fef"), storeCode);
         return ResponseEntity.ok(storeDetail);
     }
 
