@@ -114,11 +114,32 @@
             )
     </insert>
 
+    <update id="updateChallenge">
+        UPDATE challenge
+        <set>
+            <if test="update.challengeTitle != null">challenge_title = #{update.challengeTitle},</if>
+            <if test="update.challengeContent != null">challenge_content = #{update.challengeContent},</if>
+            <if test="update.recruitmentNum != null">recruitment_num = #{update.recruitmentNum},</if>
+            <if test="update.startDate != null">start_date = #{update.startDate},</if>
+            <if test="update.endDate != null">end_date = #{update.endDate},</if>
+            <if test="update.xp != null">xp = #{update.xp},</if>
+            <if test="update.thumbnailUrl != null">thumbnail_url = #{update.thumbnailUrl},</if>
+            <if test="update.challengeCategoryCode != null">challenge_category_code = #{update.challengeCategoryCode},</if>
+        </set>
+        WHERE challenge_code = #{challengeCode}
+    </update>
+
+    <update id="updateChallengeStatus">
+        UPDATE challenge
+        SET challenge_status = #{status}
+        WHERE challenge_code = #{challengeCode}
+    </update>
+
     <select id="selectChallengePart" resultType="sisosolsol.greenfire.challenge.model.dto.ChallengePartDTO">
         SELECT
             challenge_code as challengeCode,
-            user_code as userCode
-            <!-- is_host as isHost -->
+            user_code as userCode,
+            is_host as isHost
         FROM
             challenge_part
         WHERE

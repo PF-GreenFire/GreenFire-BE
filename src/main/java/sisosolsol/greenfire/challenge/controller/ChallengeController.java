@@ -2,11 +2,14 @@ package sisosolsol.greenfire.challenge.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import sisosolsol.greenfire.challenge.model.dto.ChallengeCreateDTO;
 import sisosolsol.greenfire.challenge.model.dto.ChallengeDTO;
 import sisosolsol.greenfire.challenge.model.dto.ChallengeSearchDTO;
+import sisosolsol.greenfire.challenge.model.dto.ChallengeUpdateDTO;
 import sisosolsol.greenfire.challenge.service.ChallengeService;
+import sisosolsol.greenfire.common.security.model.AuthUser;
 
 import java.net.URI;
 
@@ -18,8 +21,10 @@ public class ChallengeController {
     private final ChallengeService challengeService;
 
     @PostMapping
-    public ResponseEntity<Void> createChallenge(@RequestBody ChallengeCreateDTO challenge) {
-        Integer challengeCode = challengeService.registChallenge(challenge);
+    public ResponseEntity<Void> createChallenge(
+            @RequestBody ChallengeCreateDTO challenge,
+            @AuthenticationPrincipal AuthUser loginUser) {
+        Integer challengeCode = challengeService.registChallenge(challenge, loginUser.userId());
         return ResponseEntity.created(URI.create("/api/challenges/" + challengeCode)).build();
     }
 
@@ -43,19 +48,37 @@ public class ChallengeController {
         return ResponseEntity.ok(result);
     }
 
+    @PatchMapping("/{challengeCode}")
+    public ResponseEntity<Void> updateChallenge(
+            @PathVariable Integer challengeCode,
+            @RequestBody ChallengeUpdateDTO update,
+            @AuthenticationPrincipal AuthUser loginUser) {
+        challengeService.updateChallenge(challengeCode, update, loginUser.userId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{challengeCode}")
+    public ResponseEntity<Void> deleteChallenge(
+            @PathVariable Integer challengeCode,
+            @AuthenticationPrincipal AuthUser loginUser) {
+        challengeService.deleteChallenge(challengeCode, loginUser.userId());
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{challengeCode}/apply")
     public ResponseEntity<Void> applyChallenge(
-            @PathVariable Integer challengeCode
-            // 유저 검사 들어갈 예정
-            ) {
+            @PathVariable Integer challengeCode,
+            @AuthenticationPrincipal AuthUser loginUser) {
 
-        challengeService.applyChallenge(challengeCode);
+        challengeService.applyChallenge(challengeCode, loginUser.userId());
         return ResponseEntity.created(URI.create("/api/challenges/" + challengeCode)).build();
     }
 
     @DeleteMapping("/{challengeCode}/apply/cancel")
-    public ResponseEntity<Void> cancelChallengePart(@PathVariable Integer challengeCode) {
-        challengeService.cancelChallengePart(challengeCode);
-        return ResponseEntity.created(URI.create("/api/challenges/" + challengeCode)).build();
+    public ResponseEntity<Void> cancelChallengePart(
+            @PathVariable Integer challengeCode,
+            @AuthenticationPrincipal AuthUser loginUser) {
+        challengeService.cancelChallengePart(challengeCode, loginUser.userId());
+        return ResponseEntity.noContent().build();
     }
 }
