@@ -29,4 +29,8 @@ public class StoreCreateDTO {
     private String storeBreaktimeHours;
     private UUID userCode;
     private List<ImageUploadDTO> images;
+
+    public void setUserCode(UUID userCode) {
+        this.userCode = userCode;
+    }
 }

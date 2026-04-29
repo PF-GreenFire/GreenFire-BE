@@ -39,8 +39,8 @@ public class LocationController {
     // 초록불 메인 장소 목록 조회 TODO: 현재 위치 정보를 기반으로 반경 지도 목록을 보여주는 것으로 수정 예정, 썸네일이 필요할것 같은 예감인데 order값 1인 것으로 할지 썸네일 만들지 추후 협의 및 적용 예정
     @GetMapping
     public ResponseEntity<List<StoreListDTO>> getStoreList(@AuthenticationPrincipal AuthUser user) {
-//        List<StoreListDTO> stores = storeService.getStoreList(user.userId());
-        List<StoreListDTO> stores = storeService.getStoreList(UUID.fromString("dc31ee31-5f6f-4538-893a-462fabec8fef"));
+        UUID userId = user != null ? user.userId() : null;
+        List<StoreListDTO> stores = storeService.getStoreList(userId);
         return ResponseEntity.ok(stores);
     }
 
@@ -63,22 +63,26 @@ public class LocationController {
     // 장소 상세 정보 조회
     @GetMapping("/stores/{storeCode}")
     public ResponseEntity<StoreDetailDTO> getStoreDetail (@PathVariable("storeCode") Integer storeCode, @AuthenticationPrincipal AuthUser user) {
-//        StoreDetailDTO storeDetail = storeService.getStoreDetailByStoreCode(user.userId(), storeCode);
-        StoreDetailDTO storeDetail = storeService.getStoreDetailByStoreCode(UUID.fromString("dc31ee31-5f6f-4538-893a-462fabec8fef"), storeCode);
+        UUID userId = user != null ? user.userId() : null;
+        StoreDetailDTO storeDetail = storeService.getStoreDetailByStoreCode(userId, storeCode);
         return ResponseEntity.ok(storeDetail);
     }
 
     @PostMapping("/stores/{storeCode}/like")
-    public ResponseEntity storeLike(@PathVariable("storeCode") int storeCode, @AuthenticationPrincipal AuthUser user) {
-//        storeService.storeLike(user.userId(), storeCode);
-        storeService.storeLike(UUID.fromString("dc31ee31-5f6f-4538-893a-462fabec8fef"), storeCode);
+    public ResponseEntity<Void> storeLike(@PathVariable("storeCode") int storeCode, @AuthenticationPrincipal AuthUser user) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+        storeService.storeLike(user.userId(), storeCode);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/stores/{storeCode}/like")
-    public ResponseEntity deleteStoreLike(@PathVariable("storeCode") int storeCode, @AuthenticationPrincipal AuthUser user) {
-//        storeService.deleteStoreLike(user.userId(), storeCode);
-        storeService.deleteStoreLike(UUID.fromString("dc31ee31-5f6f-4538-893a-462fabec8fef"), storeCode);
+    public ResponseEntity<Void> deleteStoreLike(@PathVariable("storeCode") int storeCode, @AuthenticationPrincipal AuthUser user) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+        storeService.deleteStoreLike(user.userId(), storeCode);
         return ResponseEntity.ok().build();
     }
 }

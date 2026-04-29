@@ -38,7 +38,11 @@ public class StoreController {
 
     // 초록불 장소 신청 등록 TODO: service 단 예외 처리 , 예워니 handler 설정 적용 or enum 타입 관리용 유효성 검사 적용, 아.. 썸네일... 필요할 듯...ㅠㅠ 힝, 이미지 등록 적용 완료 했으나 인코딩 적용 예정
     @PostMapping("/apply")
-    public ResponseEntity<String> createApplyStore(@RequestBody StoreCreateDTO storeCreateDTO){
+    public ResponseEntity<String> createApplyStore(
+            @RequestBody StoreCreateDTO storeCreateDTO,
+            @AuthenticationPrincipal AuthUser user
+    ){
+        storeCreateDTO.setUserCode(user.userId()); // 클라이언트가 보낸 userCode는 무시하고 서버 인증 정보로 덮어쓰기
         int storeCode = storeService.registApplyStore(storeCreateDTO);
         return ResponseEntity.created(URI.create("/api/store/detail/" + storeCode)).build();
     }
@@ -48,20 +52,17 @@ public class StoreController {
     public ResponseEntity<Map<String, Object>> getApplyStoreListByUserCode(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "2") int limit,
-            //임의로 적는 로그인 한 유저 코드 TODO: 추후 @AuthenticationPrincipal 로 로그인 한 유저 코드를 받아올 예정
-            UUID userCode
+            @AuthenticationPrincipal AuthUser user
     ) {
-        userCode = UUID.fromString("1205bf73-b5ca-460a-9317-8a5b5d06e784"); //임시 유저 코드 형변환
-
-        Map<String, Object> storeList = storeService.getStoreListByUserCode(page, limit, userCode);
+        Map<String, Object> storeList = storeService.getStoreListByUserCode(page, limit, user.userId());
         return ResponseEntity.ok(storeList);
     }
 
     // 장소 상세 정보 조회
     @GetMapping("/detail/{storeCode}")
     public ResponseEntity<StoreDetailDTO> getStoreDetail (@PathVariable("storeCode") Integer storeCode, @AuthenticationPrincipal AuthUser user) {
-//        StoreDetailDTO storeDetail = storeService.getStoreDetailByStoreCode(user.userId(), storeCode);
-        StoreDetailDTO storeDetail = storeService.getStoreDetailByStoreCode(UUID.fromString("dc31ee31-5f6f-4538-893a-462fabec8fef"), storeCode);
+        UUID userId = user != null ? user.userId() : null;
+        StoreDetailDTO storeDetail = storeService.getStoreDetailByStoreCode(userId, storeCode);
         return ResponseEntity.ok(storeDetail);
     }
 
