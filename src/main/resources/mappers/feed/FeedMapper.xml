@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="sisosolsol.greenfire.feed.model.dao.FeedMapper">
+
+    <!-- 피드 상세 조회 (좋아요 여부/카운트/댓글 카운트 포함) -->
+    <select id="getFeedDetail" resultType="sisosolsol.greenfire.feed.model.dto.FeedDetailDTO">
+        SELECT
+            p.post_code           AS postCode,
+            p.user_code           AS userCode,
+            u.nickname            AS nickname,
+            NULL                  AS profileImage,
+            FALSE                 AS isFollowing,
+            FALSE                 AS featured,
+            p.created_at          AS createdAt,
+            p.post_content        AS postContent,
+            p.post_type           AS postType,
+            p.store_code          AS storeCode,
+            s.store_name          AS storeName,
+            p.challenge_code      AS challengeCode,
+            c.challenge_title     AS challengeTitle,
+            CASE WHEN pl.user_code IS NOT NULL THEN TRUE ELSE FALSE END AS liked,
+            COALESCE(lc.like_count, 0)   AS likeCount,
+            COALESCE(cc.comment_count, 0) AS commentCount
+        FROM post p
+        JOIN "user" u ON p.user_code = u.user_code
+        LEFT JOIN store s ON p.store_code = s.store_code
+        LEFT JOIN challenge c ON p.challenge_code = c.challenge_code
+        LEFT JOIN post_like pl
+            ON pl.post_code = p.post_code
+           AND pl.user_code = #{userCode}::uuid
+        LEFT JOIN (
+            SELECT post_code, COUNT(*) AS like_count
+            FROM post_like
+            GROUP BY post_code
+        ) lc ON lc.post_code = p.post_code
+        LEFT JOIN (
+            SELECT post_code, COUNT(*) AS comment_count
+            FROM post_comment
+            WHERE comment_status = 'ACTIVE'
+            GROUP BY post_code
+        ) cc ON cc.post_code = p.post_code
+        WHERE p.post_code = #{postCode}
+          AND p.post_status = 'ACTIVE'
+    </select>
+
+    <!-- 게시글 이미지 목록 -->
+    <select id="getPostImages" resultType="sisosolsol.greenfire.image.model.dto.ImageDTO">
+        SELECT
+            image_code   AS imageCode,
+            'POST'       AS referenceType,
+            post_code    AS referenceCode,
+            path         AS path,
+            origin_name  AS originName,
+            file_name    AS fileName,
+            "order"      AS "order"
+        FROM image
+        WHERE post_code = #{postCode}
+        ORDER BY "order" ASC, image_code ASC
+    </select>
+
+    <!-- 좋아요 존재 여부 -->
+    <select id="existsLike" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM post_like
+            WHERE post_code = #{postCode}
+              AND user_code = #{userCode}::uuid
+        )
+    </select>
+
+    <insert id="insertLike">
+        INSERT INTO post_like (post_code, user_code)
+        VALUES (#{postCode}, #{userCode}::uuid)
+        ON CONFLICT (post_code, user_code) DO NOTHING
+    </insert>
+
+    <delete id="deleteLike">
+        DELETE FROM post_like
+        WHERE post_code = #{postCode}
+          AND user_code = #{userCode}::uuid
+    </delete>
+
+    <select id="countLike" resultType="int">
+        SELECT COUNT(*) FROM post_like WHERE post_code = #{postCode}
+    </select>
+
+    <!-- 댓글 목록 -->
+    <select id="getComments" resultType="sisosolsol.greenfire.feed.model.dto.CommentDTO">
+        SELECT
+            pc.comment_code     AS commentCode,
+            pc.post_code        AS postCode,
+            pc.user_code        AS userCode,
+            u.nickname          AS nickname,
+            NULL                AS profileImage,
+            pc.comment_content  AS commentContent,
+            pc.created_at       AS createdAt
+        FROM post_comment pc
+        JOIN "user" u ON pc.user_code = u.user_code
+        WHERE pc.post_code = #{postCode}
+          AND pc.comment_status = 'ACTIVE'
+        ORDER BY pc.created_at ASC
+    </select>
+
+    <!-- 댓글 등록 (commentCode를 keyProperty로 받음) -->
+    <insert id="insertComment"
+            parameterType="sisosolsol.greenfire.feed.model.dto.CommentCreateParam"
+            useGeneratedKeys="true"
+            keyProperty="commentCode"
+            keyColumn="comment_code">
+        INSERT INTO post_comment (post_code, user_code, comment_content)
+        VALUES (#{postCode}, #{userCode}::uuid, #{content})
+    </insert>
+
+    <!-- 단일 댓글 조회 (insert 직후 응답용) -->
+    <select id="getComment" resultType="sisosolsol.greenfire.feed.model.dto.CommentDTO">
+        SELECT
+            pc.comment_code     AS commentCode,
+            pc.post_code        AS postCode,
+            pc.user_code        AS userCode,
+            u.nickname          AS nickname,
+            NULL                AS profileImage,
+            pc.comment_content  AS commentContent,
+            pc.created_at       AS createdAt
+        FROM post_comment pc
+        JOIN "user" u ON pc.user_code = u.user_code
+        WHERE pc.comment_code = #{commentCode}
+    </select>
+
+    <!-- 댓글 작성자 조회 (권한 체크용) -->
+    <select id="getCommentOwner" resultType="java.util.UUID">
+        SELECT user_code FROM post_comment WHERE comment_code = #{commentCode}
+    </select>
+
+    <!-- 댓글 소프트 삭제 -->
+    <update id="softDeleteComment">
+        UPDATE post_comment
+        SET comment_status = 'DELETED'
+        WHERE comment_code = #{commentCode}
+    </update>
+
+</mapper>
