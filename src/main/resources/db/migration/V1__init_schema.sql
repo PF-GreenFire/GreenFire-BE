@@ -3,8 +3,8 @@
 -- Version 1: Initial Schema Setup
 -- ============================================
 
--- 1. user (사용자)
-CREATE TABLE user (
+-- 1. user (사용자) — "user"는 PostgreSQL 키워드라 따옴표 필수
+CREATE TABLE IF NOT EXISTS "user" (
     user_code UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nickname VARCHAR(50) NOT NULL,
     name VARCHAR(50) NOT NULL,
@@ -16,13 +16,13 @@ CREATE TABLE user (
 );
 
 -- 2. area (지역)
-CREATE TABLE area (
+CREATE TABLE IF NOT EXISTS area (
     area_code SERIAL PRIMARY KEY,
     area_name VARCHAR(100) NOT NULL
 );
 
 -- 3. location (위치)
-CREATE TABLE location (
+CREATE TABLE IF NOT EXISTS location (
     location_code SERIAL PRIMARY KEY,
     address VARCHAR(255) NOT NULL,
     latitude DECIMAL(10, 7) NOT NULL,
@@ -32,21 +32,21 @@ CREATE TABLE location (
 );
 
 -- 4. challenge_category (챌린지 카테고리)
-CREATE TABLE challenge_category (
+CREATE TABLE IF NOT EXISTS challenge_category (
     challenge_category_code SERIAL PRIMARY KEY,
     challenge_category_name VARCHAR(100) NOT NULL,
     status VARCHAR(20) DEFAULT 'ACTIVE'
 );
 
 -- 5. store_category (가게 카테고리)
-CREATE TABLE store_category (
+CREATE TABLE IF NOT EXISTS store_category (
     store_category_code SERIAL PRIMARY KEY,
     store_category_name VARCHAR(100) NOT NULL,
     status VARCHAR(20) DEFAULT 'ACTIVE'
 );
 
 -- 6. challenge (챌린지)
-CREATE TABLE challenge (
+CREATE TABLE IF NOT EXISTS challenge (
     challenge_code INTEGER PRIMARY KEY,
     challenge_title VARCHAR(200) NOT NULL,
     challenge_content TEXT NOT NULL,
@@ -59,22 +59,22 @@ CREATE TABLE challenge (
     challenge_category_code INTEGER,
     challenge_status VARCHAR(20) DEFAULT 'RECRUITING',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (host_user) REFERENCES user(user_code),
+    FOREIGN KEY (host_user) REFERENCES "user"(user_code),
     FOREIGN KEY (challenge_category_code) REFERENCES challenge_category(challenge_category_code)
 );
 
 -- 7. challenge_part (챌린지 참여)
-CREATE TABLE challenge_part (
+CREATE TABLE IF NOT EXISTS challenge_part (
     challenge_part_code SERIAL PRIMARY KEY,
     challenge_code INTEGER NOT NULL,
     user_code UUID NOT NULL,
     is_host BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (challenge_code) REFERENCES challenge(challenge_code),
-    FOREIGN KEY (user_code) REFERENCES user(user_code)
+    FOREIGN KEY (user_code) REFERENCES "user"(user_code)
 );
 
 -- 8. store (가게)
-CREATE TABLE store (
+CREATE TABLE IF NOT EXISTS store (
     store_code SERIAL PRIMARY KEY,
     store_name VARCHAR(200) NOT NULL,
     store_status VARCHAR(20) DEFAULT 'WAITING',
@@ -91,11 +91,11 @@ CREATE TABLE store (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (location_code) REFERENCES location(location_code),
     FOREIGN KEY (store_category_code) REFERENCES store_category(store_category_code),
-    FOREIGN KEY (user_code) REFERENCES user(user_code)
+    FOREIGN KEY (user_code) REFERENCES "user"(user_code)
 );
 
 -- 9. post (게시글)
-CREATE TABLE post (
+CREATE TABLE IF NOT EXISTS post (
     post_code SERIAL PRIMARY KEY,
     user_code UUID NOT NULL,
     post_content TEXT NOT NULL,
@@ -106,13 +106,13 @@ CREATE TABLE post (
     "like" INTEGER DEFAULT 0,
     post_status VARCHAR(20) DEFAULT 'ACTIVE',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_code) REFERENCES user(user_code),
+    FOREIGN KEY (user_code) REFERENCES "user"(user_code),
     FOREIGN KEY (store_code) REFERENCES store(store_code),
     FOREIGN KEY (challenge_code) REFERENCES challenge(challenge_code)
 );
 
 -- 10. image (이미지)
-CREATE TABLE image (
+CREATE TABLE IF NOT EXISTS image (
     image_code SERIAL PRIMARY KEY,
     post_code INTEGER,
     store_code INTEGER,
@@ -130,29 +130,29 @@ CREATE TABLE image (
 -- ============================================
 
 -- 챌린지 목록 조회 시 사용 (ORDER BY created_at DESC)
-CREATE INDEX idx_challenge_created_at ON challenge(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_challenge_created_at ON challenge(created_at DESC);
 
 -- 챌린지 카테고리 필터링 시 사용
-CREATE INDEX idx_challenge_category ON challenge(challenge_category_code);
+CREATE INDEX IF NOT EXISTS idx_challenge_category ON challenge(challenge_category_code);
 
 -- 챌린지 참여 확인 (challenge_code, user_code 복합 조회)
-CREATE INDEX idx_challenge_part_composite ON challenge_part(challenge_code, user_code);
+CREATE INDEX IF NOT EXISTS idx_challenge_part_composite ON challenge_part(challenge_code, user_code);
 
 -- 챌린지 참여자 수 카운트 (challenge_code로 그룹핑)
-CREATE INDEX idx_challenge_part_challenge ON challenge_part(challenge_code);
+CREATE INDEX IF NOT EXISTS idx_challenge_part_challenge ON challenge_part(challenge_code);
 
 -- 게시글 목록 조회 (post_status 필터링 + created_at 정렬)
-CREATE INDEX idx_post_status_created ON post(post_status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_post_status_created ON post(post_status, created_at DESC);
 
 -- 챌린지별 게시글 조회 (challenge_code 필터링)
-CREATE INDEX idx_post_challenge ON post(challenge_code);
+CREATE INDEX IF NOT EXISTS idx_post_challenge ON post(challenge_code);
 
 -- 가게 상태별 조회 (store_status 필터링 + created_at 정렬)
-CREATE INDEX idx_store_status_created ON store(store_status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_store_status_created ON store(store_status, created_at DESC);
 
 -- 사용자별 신청한 가게 목록 조회
-CREATE INDEX idx_store_user ON store(user_code);
+CREATE INDEX IF NOT EXISTS idx_store_user ON store(user_code);
 
 -- 이메일 기반 사용자 조회 (로그인/인증 시 사용)
-CREATE INDEX idx_user_email ON user(email);
+CREATE INDEX IF NOT EXISTS idx_user_email ON "user"(email);
 
