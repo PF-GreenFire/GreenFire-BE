@@ -60,7 +60,7 @@
             i.file_name
         FROM
             post p
-            JOIN user u on (p.user_code = u.user_code)
+            JOIN users u on (p.user_code = u.user_code)
             JOIN store s on (p.store_code = s.store_code)
             JOIN challenge c on (p.challenge_code = c.challenge_code)
             LEFT JOIN image i on (p.post_code = i.post_code)

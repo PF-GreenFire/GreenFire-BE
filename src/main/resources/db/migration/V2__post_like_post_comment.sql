@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS post_like (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (post_code, user_code),
     FOREIGN KEY (post_code) REFERENCES post(post_code) ON DELETE CASCADE,
-    FOREIGN KEY (user_code) REFERENCES "user"(user_code) ON DELETE CASCADE
+    FOREIGN KEY (user_code) REFERENCES users(user_code) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_post_like_user ON post_like(user_code);
 
@@ -23,6 +23,6 @@ CREATE TABLE IF NOT EXISTS post_comment (
     comment_status VARCHAR(20) DEFAULT 'ACTIVE',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (post_code) REFERENCES post(post_code) ON DELETE CASCADE,
-    FOREIGN KEY (user_code) REFERENCES "user"(user_code) ON DELETE CASCADE
+    FOREIGN KEY (user_code) REFERENCES users(user_code) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_comment_post ON post_comment(post_code, comment_status, created_at DESC);

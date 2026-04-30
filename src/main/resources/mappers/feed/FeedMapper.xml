@@ -24,7 +24,7 @@
             COALESCE(lc.like_count, 0)   AS likeCount,
             COALESCE(cc.comment_count, 0) AS commentCount
         FROM post p
-        JOIN "user" u ON p.user_code = u.user_code
+        JOIN users u ON p.user_code = u.user_code
         LEFT JOIN store s ON p.store_code = s.store_code
         LEFT JOIN challenge c ON p.challenge_code = c.challenge_code
         LEFT JOIN post_like pl
@@ -96,7 +96,7 @@
             pc.comment_content  AS commentContent,
             pc.created_at       AS createdAt
         FROM post_comment pc
-        JOIN "user" u ON pc.user_code = u.user_code
+        JOIN users u ON pc.user_code = u.user_code
         WHERE pc.post_code = #{postCode}
           AND pc.comment_status = 'ACTIVE'
         ORDER BY pc.created_at ASC
@@ -123,7 +123,7 @@
             pc.comment_content  AS commentContent,
             pc.created_at       AS createdAt
         FROM post_comment pc
-        JOIN "user" u ON pc.user_code = u.user_code
+        JOIN users u ON pc.user_code = u.user_code
         WHERE pc.comment_code = #{commentCode}
     </select>
 

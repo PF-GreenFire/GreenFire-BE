@@ -3,17 +3,8 @@
 -- Version 1: Initial Schema Setup
 -- ============================================
 
--- 1. user (사용자) — "user"는 PostgreSQL 키워드라 따옴표 필수
-CREATE TABLE IF NOT EXISTS "user" (
-    user_code UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    nickname VARCHAR(50) NOT NULL,
-    name VARCHAR(50) NOT NULL,
-    email VARCHAR(100) NOT NULL,
-    birth DATE,
-    gender VARCHAR(10),
-    phone VARCHAR(20),
-    status VARCHAR(20) DEFAULT 'ACTIVE'
-);
+-- 1. (구) user 테이블은 제거. JPA UserAccount entity가 만드는 "users" 테이블로 통합.
+--    MyBatis 매퍼들은 모두 users(user_code)를 참조한다.
 
 -- 2. area (지역)
 CREATE TABLE IF NOT EXISTS area (
@@ -59,7 +50,7 @@ CREATE TABLE IF NOT EXISTS challenge (
     challenge_category_code INTEGER,
     challenge_status VARCHAR(20) DEFAULT 'RECRUITING',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (host_user) REFERENCES "user"(user_code),
+    FOREIGN KEY (host_user) REFERENCES users(user_code),
     FOREIGN KEY (challenge_category_code) REFERENCES challenge_category(challenge_category_code)
 );
 
@@ -70,7 +61,7 @@ CREATE TABLE IF NOT EXISTS challenge_part (
     user_code UUID NOT NULL,
     is_host BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (challenge_code) REFERENCES challenge(challenge_code),
-    FOREIGN KEY (user_code) REFERENCES "user"(user_code)
+    FOREIGN KEY (user_code) REFERENCES users(user_code)
 );
 
 -- 8. store (가게)
@@ -91,7 +82,7 @@ CREATE TABLE IF NOT EXISTS store (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (location_code) REFERENCES location(location_code),
     FOREIGN KEY (store_category_code) REFERENCES store_category(store_category_code),
-    FOREIGN KEY (user_code) REFERENCES "user"(user_code)
+    FOREIGN KEY (user_code) REFERENCES users(user_code)
 );
 
 -- 9. post (게시글)
@@ -106,7 +97,7 @@ CREATE TABLE IF NOT EXISTS post (
     "like" INTEGER DEFAULT 0,
     post_status VARCHAR(20) DEFAULT 'ACTIVE',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_code) REFERENCES "user"(user_code),
+    FOREIGN KEY (user_code) REFERENCES users(user_code),
     FOREIGN KEY (store_code) REFERENCES store(store_code),
     FOREIGN KEY (challenge_code) REFERENCES challenge(challenge_code)
 );
@@ -153,6 +144,5 @@ CREATE INDEX IF NOT EXISTS idx_store_status_created ON store(store_status, creat
 -- 사용자별 신청한 가게 목록 조회
 CREATE INDEX IF NOT EXISTS idx_store_user ON store(user_code);
 
--- 이메일 기반 사용자 조회 (로그인/인증 시 사용)
-CREATE INDEX IF NOT EXISTS idx_user_email ON "user"(email);
+-- (사용자 이메일 인덱스는 users 테이블의 자체 unique constraint로 대체)
 
