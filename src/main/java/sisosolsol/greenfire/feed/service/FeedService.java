@@ -9,6 +9,8 @@ import sisosolsol.greenfire.feed.model.dao.FeedMapper;
 import sisosolsol.greenfire.feed.model.dto.CommentCreateParam;
 import sisosolsol.greenfire.feed.model.dto.CommentDTO;
 import sisosolsol.greenfire.feed.model.dto.FeedDetailDTO;
+import sisosolsol.greenfire.feed.model.dto.FeedListItemDTO;
+import sisosolsol.greenfire.feed.model.dto.FeedListResponse;
 import sisosolsol.greenfire.feed.model.dto.LikeToggleResponse;
 import sisosolsol.greenfire.image.model.dto.ImageDTO;
 
@@ -52,6 +54,25 @@ public class FeedService {
         CommentCreateParam param = new CommentCreateParam(postCode, userCode, content);
         feedMapper.insertComment(param);
         return feedMapper.getComment(param.getCommentCode());
+    }
+
+    public FeedListResponse getFeedList(UUID userCode, Integer cursorPostCode, int size) {
+        // size+1을 가져와 hasMore 판정
+        List<FeedListItemDTO> rows = feedMapper.getFeedList(userCode, cursorPostCode, size + 1);
+        boolean hasMore = rows.size() > size;
+        List<FeedListItemDTO> content = hasMore ? rows.subList(0, size) : rows;
+
+        FeedListResponse resp = new FeedListResponse();
+        resp.setContent(content);
+        resp.setHasMore(hasMore);
+        if (!content.isEmpty()) {
+            resp.setNextCursorPostCode(content.get(content.size() - 1).getPostCode());
+        }
+        return resp;
+    }
+
+    public List<FeedListItemDTO> getFeaturedPosts(UUID userCode, int limit) {
+        return feedMapper.getFeaturedPosts(userCode, limit);
     }
 
     @Transactional

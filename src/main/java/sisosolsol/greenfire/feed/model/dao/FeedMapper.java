@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Param;
 import sisosolsol.greenfire.feed.model.dto.CommentCreateParam;
 import sisosolsol.greenfire.feed.model.dto.CommentDTO;
 import sisosolsol.greenfire.feed.model.dto.FeedDetailDTO;
+import sisosolsol.greenfire.feed.model.dto.FeedListItemDTO;
 import sisosolsol.greenfire.image.model.dto.ImageDTO;
 
 import java.util.List;
@@ -38,4 +39,11 @@ public interface FeedMapper {
     UUID getCommentOwner(@Param("commentCode") Integer commentCode);
 
     void softDeleteComment(@Param("commentCode") Integer commentCode);
+
+    List<FeedListItemDTO> getFeedList(@Param("userCode") UUID userCode,
+                                      @Param("cursorPostCode") Integer cursorPostCode,
+                                      @Param("size") int size);
+
+    List<FeedListItemDTO> getFeaturedPosts(@Param("userCode") UUID userCode,
+                                           @Param("limit") int limit);
 }

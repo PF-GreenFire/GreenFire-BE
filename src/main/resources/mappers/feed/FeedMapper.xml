@@ -139,4 +139,65 @@
         WHERE comment_code = #{commentCode}
     </update>
 
+    <!-- 피드 목록 (postCode 내림차순 cursor) -->
+    <sql id="feedListColumns">
+        p.post_code           AS postCode,
+        p.user_code           AS userCode,
+        u.nickname            AS nickname,
+        NULL                  AS profileImage,
+        FALSE                 AS isFollowing,
+        FALSE                 AS featured,
+        p.created_at          AS createdAt,
+        p.post_content        AS postContent,
+        p.post_type           AS postType,
+        p.thumbnail           AS thumbnail,
+        p.store_code          AS storeCode,
+        s.store_name          AS storeName,
+        p.challenge_code      AS challengeCode,
+        c.challenge_title     AS challengeTitle,
+        CASE WHEN pl.user_code IS NOT NULL THEN TRUE ELSE FALSE END AS liked,
+        COALESCE(lc.like_count, 0)    AS likeCount,
+        COALESCE(cc.comment_count, 0) AS commentCount
+    </sql>
+
+    <sql id="feedListJoins">
+        FROM post p
+        JOIN users u ON p.user_code = u.user_code
+        LEFT JOIN store s     ON p.store_code     = s.store_code
+        LEFT JOIN challenge c ON p.challenge_code = c.challenge_code
+        LEFT JOIN post_like pl
+            ON pl.post_code = p.post_code
+           AND pl.user_code = #{userCode}::uuid
+        LEFT JOIN (
+            SELECT post_code, COUNT(*) AS like_count
+            FROM post_like GROUP BY post_code
+        ) lc ON lc.post_code = p.post_code
+        LEFT JOIN (
+            SELECT post_code, COUNT(*) AS comment_count
+            FROM post_comment WHERE comment_status = 'ACTIVE' GROUP BY post_code
+        ) cc ON cc.post_code = p.post_code
+    </sql>
+
+    <select id="getFeedList" resultType="sisosolsol.greenfire.feed.model.dto.FeedListItemDTO">
+        SELECT
+        <include refid="feedListColumns"/>
+        <include refid="feedListJoins"/>
+        WHERE p.post_status = 'ACTIVE'
+        <if test="cursorPostCode != null">
+            AND p.post_code &lt; #{cursorPostCode}
+        </if>
+        ORDER BY p.post_code DESC
+        LIMIT #{size}
+    </select>
+
+    <!-- 추천 피드 (현재는 단순 최신순 LIMIT — featured 컬럼/관리자 토글 도입 후 정상화) -->
+    <select id="getFeaturedPosts" resultType="sisosolsol.greenfire.feed.model.dto.FeedListItemDTO">
+        SELECT
+        <include refid="feedListColumns"/>
+        <include refid="feedListJoins"/>
+        WHERE p.post_status = 'ACTIVE'
+        ORDER BY p.post_code DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

@@ -8,6 +8,8 @@ import sisosolsol.greenfire.common.security.model.AuthUser;
 import sisosolsol.greenfire.feed.model.dto.CommentDTO;
 import sisosolsol.greenfire.feed.model.dto.CommentRequest;
 import sisosolsol.greenfire.feed.model.dto.FeedDetailDTO;
+import sisosolsol.greenfire.feed.model.dto.FeedListItemDTO;
+import sisosolsol.greenfire.feed.model.dto.FeedListResponse;
 import sisosolsol.greenfire.feed.model.dto.LikeToggleResponse;
 import sisosolsol.greenfire.feed.service.FeedService;
 
@@ -19,6 +21,30 @@ import java.util.List;
 public class FeedController {
 
     private final FeedService feedService;
+
+    // 피드 목록 (cursor 기반 무한스크롤)
+    @GetMapping
+    public ResponseEntity<FeedListResponse> getFeedList(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) Integer cursorPostCode,
+            @RequestParam(required = false) Double cursorScore,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal AuthUser user) {
+        // type/cursorScore는 추천 알고리즘 도입 후 활용 (지금은 최신순 cursor)
+        return ResponseEntity.ok(
+                feedService.getFeedList(user != null ? user.userId() : null, cursorPostCode, size)
+        );
+    }
+
+    // 추천 피드
+    @GetMapping("/featured")
+    public ResponseEntity<List<FeedListItemDTO>> getFeatured(
+            @RequestParam(defaultValue = "5") int limit,
+            @AuthenticationPrincipal AuthUser user) {
+        return ResponseEntity.ok(
+                feedService.getFeaturedPosts(user != null ? user.userId() : null, limit)
+        );
+    }
 
     // 피드 상세 조회 (좋아요 여부 포함을 위해 인증 정보 사용)
     @GetMapping("/{postCode}")
