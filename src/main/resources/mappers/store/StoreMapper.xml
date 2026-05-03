@@ -77,7 +77,7 @@
             LEFT JOIN
                 image i
             ON
-                i.target_type = 'STORE' AND s.store_code::text = i.target_code
+                i.reference_type = 'STORE' AND s.store_code::text = i.reference_code
             WHERE
                 s.store_status = 'APPROVE'
             GROUP BY
@@ -237,7 +237,7 @@
         LEFT JOIN
             image i
         ON
-            s.store_code::text = i.target_code AND i.target_type = 'STORE'
+            s.store_code::text = i.reference_code AND i.reference_type = 'STORE'
         WHERE
             s.store_code = #{storeCode}
     </select>
