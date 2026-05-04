@@ -288,4 +288,8 @@
         AND
             user_code = #{userCode}
     </delete>
+
+    <select id="findApplicantUserCode" resultType="java.util.UUID">
+        SELECT user_code FROM store WHERE store_code = #{storeCode}
+    </select>
 </mapper>

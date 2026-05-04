@@ -28,6 +28,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final JwtUtil jwtUtil;
+    private final sisosolsol.greenfire.spark.service.SparkService sparkService;
 
     @Value("${app.cookie.secure:false}")
     private boolean cookieSecure;
@@ -76,7 +77,11 @@ public class AuthController {
     @GetMapping("/me")
     public MeResponse me(Authentication authentication) {
         AuthUser user = (AuthUser) authentication.getPrincipal();
-        return new MeResponse(true, user.userId(), user.email(), user.role());
+        int total = sparkService.getTotalSpark(user.userId());
+        return new MeResponse(
+                true, user.userId(), user.email(), user.role(),
+                sisosolsol.greenfire.spark.model.dto.SparkInfo.from(total)
+        );
     }
 
     @GetMapping("/check-email")

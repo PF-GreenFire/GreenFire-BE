@@ -11,6 +11,7 @@ import sisosolsol.greenfire.image.service.ImageService;
 import sisosolsol.greenfire.location.model.dao.LocationMapper;
 import sisosolsol.greenfire.location.model.dto.LocationDTO;
 import sisosolsol.greenfire.location.service.LocationService;
+import sisosolsol.greenfire.spark.service.SparkService;
 import sisosolsol.greenfire.store.model.dao.StoreMapper;
 import sisosolsol.greenfire.store.model.dto.*;
 
@@ -27,6 +28,7 @@ public class StoreService {
     private final LocationMapper locationMapper;
     private final LocationService locationService;
     private final ImageService imageService;
+    private final SparkService sparkService;
 
     // 초록불 메인 장소 목록 조회 TODO: 현재 위치 정보를 기반으로 반경 지도 목록을 보여주는 것으로 수정 예정
     public List<StoreListDTO> getStoreList(UUID userCode) {
@@ -100,6 +102,14 @@ public class StoreService {
     // 관리자 장소 상태 변경
     public void updateStoreStatus(int storeCode, StoreUpdateStatusDTO storeUpdateStatusDTO) {
         storeMapper.updateStoreStatus(storeCode, storeUpdateStatusDTO);
+
+        // 승인 시 신청자에게 spark 적립 (REJECT/DELETE는 0). 캡 처리는 sparkService 내부 logic 추후 보강.
+        if (storeUpdateStatusDTO.getStatus() == sisosolsol.greenfire.common.enums.store.StoreStatus.APPROVE) {
+            UUID applicant = storeMapper.findApplicantUserCode(storeCode);
+            if (applicant != null) {
+                sparkService.award(applicant, 50, "STORE_APPROVED", "STORE", storeCode);
+            }
+        }
     }
 
     // locationCode 중복 확인 및 등록수 locationCode 반환 메서드

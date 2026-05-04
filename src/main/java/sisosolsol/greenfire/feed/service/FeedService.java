@@ -18,6 +18,7 @@ import sisosolsol.greenfire.feed.model.dto.LikeToggleResponse;
 import sisosolsol.greenfire.feed.model.dto.PostInsertParam;
 import sisosolsol.greenfire.image.model.dto.ImageDTO;
 import sisosolsol.greenfire.image.service.ImageService;
+import sisosolsol.greenfire.spark.service.SparkService;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +29,7 @@ public class FeedService {
 
     private final FeedMapper feedMapper;
     private final ImageService imageService;
+    private final SparkService sparkService;
 
     public FeedDetailDTO getFeedDetail(Integer postCode, UUID userCode) {
         FeedDetailDTO detail = feedMapper.getFeedDetail(postCode, userCode);
@@ -48,6 +50,18 @@ public class FeedService {
             feedMapper.insertLike(postCode, userCode);
         }
         int count = feedMapper.countLike(postCode);
+
+        // 좋아요 추가 시 N개 단위 도달하면 작성자에게 1 spark (게시물당 캡)
+        if (!alreadyLiked && count > 0 && count % SparkService.LIKE_PER_REWARD == 0) {
+            FeedDetailDTO detail = feedMapper.getFeedDetail(postCode, null);
+            if (detail != null && detail.getUserCode() != null
+                    && !detail.getUserCode().equals(userCode) // 자기 글 자추 방지
+                    && !sparkService.isLikeRewardCapped(detail.getUserCode(), postCode)) {
+                sparkService.award(detail.getUserCode(), 1,
+                        "LIKE_RECEIVED", "POST", postCode);
+            }
+        }
+
         return new LikeToggleResponse(!alreadyLiked, count);
     }
 
@@ -101,6 +115,10 @@ public class FeedService {
                 feedMapper.updatePostThumbnail(postCode, saved.get(0).getPath());
             }
         }
+
+        // 인증글 작성 보상
+        sparkService.award(userCode, 5, "POST_CREATE", "POST", postCode);
+
         return postCode;
     }
 

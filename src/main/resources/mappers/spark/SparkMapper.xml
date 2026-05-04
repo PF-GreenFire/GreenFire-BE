@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="sisosolsol.greenfire.spark.model.dao.SparkMapper">
+
+    <!-- users.total_spark에 amount 가산. RETURNING으로 갱신값 반환 -->
+    <select id="addSpark" resultType="int">
+        UPDATE users
+        SET total_spark = total_spark + #{amount}
+        WHERE user_code = #{userCode}::uuid
+        RETURNING total_spark
+    </select>
+
+    <select id="getTotalSpark" resultType="int">
+        SELECT COALESCE(total_spark, 0)
+        FROM users
+        WHERE user_code = #{userCode}::uuid
+    </select>
+
+    <insert id="insertHistory">
+        INSERT INTO spark_history (user_code, action, amount, source_type, source_code)
+        VALUES (#{userCode}::uuid, #{action}, #{amount}, #{sourceType}, #{sourceCode})
+    </insert>
+
+    <select id="countHistory" resultType="int">
+        SELECT COUNT(*) FROM spark_history
+        WHERE user_code = #{userCode}::uuid
+          AND action = #{action}
+        <if test="sourceType != null">AND source_type = #{sourceType}</if>
+        <if test="sourceCode != null">AND source_code = #{sourceCode}</if>
+    </select>
+
+</mapper>

@@ -44,4 +44,7 @@ public interface StoreMapper {
     void storeLike(@Param("userCode") UUID userCode, @Param("storeCode") int storeCode);
 
     void deleteStoreLike(@Param("userCode") UUID userCode, @Param("storeCode") int storeCode);
+
+    // 매장 신청자 user_code 조회 (spark 적립용)
+    UUID findApplicantUserCode(@Param("storeCode") int storeCode);
 }
