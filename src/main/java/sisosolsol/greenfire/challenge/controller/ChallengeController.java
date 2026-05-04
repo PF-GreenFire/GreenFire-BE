@@ -39,6 +39,13 @@ public class ChallengeController {
         return ResponseEntity.ok(result);
     }
 
+    // 마감 임박 챌린지 (RECRUITING + endDate ASC, 메인 페이지 섹션용)
+    @GetMapping("/closing-soon")
+    public ResponseEntity<java.util.List<ChallengeDTO>> getClosingSoon(
+            @RequestParam(defaultValue = "5") int limit) {
+        return ResponseEntity.ok(challengeService.getClosingSoonChallenges(limit));
+    }
+
     @GetMapping("/{challengeCode}")
     public ResponseEntity<ChallengeDTO> getChallengeListDetails(
             @PathVariable Integer challengeCode

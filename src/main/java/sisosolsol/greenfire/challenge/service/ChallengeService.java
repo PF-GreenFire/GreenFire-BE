@@ -64,6 +64,10 @@ public class ChallengeService {
         return challengeDetails;
     }
 
+    public List<ChallengeDTO> getClosingSoonChallenges(int limit) {
+        return challengeMapper.selectClosingSoon(limit);
+    }
+
     @Transactional
     public void updateChallenge(Integer challengeCode, ChallengeUpdateDTO update, UUID userId) {
 

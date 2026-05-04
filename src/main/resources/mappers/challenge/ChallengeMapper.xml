@@ -51,6 +51,27 @@
         WHERE challenge_code = #{challengeCode}
     </select>
 
+    <select id="selectClosingSoon" resultType="sisosolsol.greenfire.challenge.model.dto.ChallengeDTO">
+        SELECT
+            challenge_code,
+            created_at,
+            challenge_title,
+            challenge_content,
+            host_user,
+            recruitment_num,
+            start_date,
+            end_date,
+            xp,
+            thumbnail_url,
+            challenge_category_code,
+            challenge_status
+        FROM challenge
+        WHERE challenge_status = 'RECRUITING'
+          AND end_date &gt;= CURRENT_DATE
+        ORDER BY end_date ASC, challenge_code ASC
+        LIMIT #{limit}
+    </select>
+
     <select id="countChallenges" parameterType="sisosolsol.greenfire.challenge.model.dto.ChallengeSearchCondition" resultType="int">
         SELECT COUNT(*)
         FROM challenge

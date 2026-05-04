@@ -38,4 +38,6 @@ public interface ChallengeMapper {
     int cancelChallengePart(Integer challengeCode, UUID userCode);
 
     int countActiveChallenges();
+
+    List<ChallengeDTO> selectClosingSoon(@Param("limit") int limit);
 }
