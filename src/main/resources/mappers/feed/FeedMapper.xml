@@ -45,18 +45,19 @@
           AND p.post_status = 'ACTIVE'
     </select>
 
-    <!-- 게시글 이미지 목록 -->
+    <!-- 게시글 이미지 목록 (reference_type/reference_code 패턴 + 구식 post_code 컬럼도 호환) -->
     <select id="getPostImages" resultType="sisosolsol.greenfire.image.model.dto.ImageDTO">
         SELECT
             image_code   AS imageCode,
-            'POST'       AS referenceType,
-            post_code    AS referenceCode,
+            COALESCE(reference_type, 'POST') AS referenceType,
+            COALESCE(reference_code, post_code::text) AS referenceCode,
             path         AS path,
             origin_name  AS originName,
             file_name    AS fileName,
             "order"      AS "order"
         FROM image
-        WHERE post_code = #{postCode}
+        WHERE (reference_type = 'POST' AND reference_code = #{postCode}::text)
+           OR (post_code = #{postCode})
         ORDER BY "order" ASC, image_code ASC
     </select>
 
@@ -199,5 +200,22 @@
         ORDER BY p.post_code DESC
         LIMIT #{limit}
     </select>
+
+    <!-- 인증글 등록 (postCode를 keyProperty로 받음) -->
+    <insert id="insertPost"
+            parameterType="sisosolsol.greenfire.feed.model.dto.PostInsertParam"
+            useGeneratedKeys="true"
+            keyProperty="postCode"
+            keyColumn="post_code">
+        INSERT INTO post (user_code, post_content, post_type, store_code, challenge_code)
+        VALUES (#{userCode}::uuid, #{postContent}, #{postType}, #{storeCode}, #{challengeCode})
+    </insert>
+
+    <!-- 등록 직후 첫 이미지 path를 thumbnail로 박아두기 -->
+    <update id="updatePostThumbnail">
+        UPDATE post
+        SET thumbnail = #{thumbnail}
+        WHERE post_code = #{postCode}
+    </update>
 
 </mapper>

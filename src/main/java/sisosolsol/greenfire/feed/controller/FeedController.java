@@ -5,13 +5,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import sisosolsol.greenfire.common.security.model.AuthUser;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 import sisosolsol.greenfire.feed.model.dto.CommentDTO;
 import sisosolsol.greenfire.feed.model.dto.CommentRequest;
+import sisosolsol.greenfire.feed.model.dto.FeedCreateRequest;
 import sisosolsol.greenfire.feed.model.dto.FeedDetailDTO;
 import sisosolsol.greenfire.feed.model.dto.FeedListItemDTO;
 import sisosolsol.greenfire.feed.model.dto.FeedListResponse;
 import sisosolsol.greenfire.feed.model.dto.LikeToggleResponse;
 import sisosolsol.greenfire.feed.service.FeedService;
+
+import java.net.URI;
 
 import java.util.List;
 
@@ -34,6 +39,19 @@ public class FeedController {
         return ResponseEntity.ok(
                 feedService.getFeedList(user != null ? user.userId() : null, cursorPostCode, size)
         );
+    }
+
+    // 피드 등록 (multipart: data + images)
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> createFeedPost(
+            @RequestPart("data") FeedCreateRequest request,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            @AuthenticationPrincipal AuthUser user) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Integer postCode = feedService.createPost(request, images, user.userId());
+        return ResponseEntity.created(URI.create("/api/feed/" + postCode)).build();
     }
 
     // 추천 피드

@@ -3,16 +3,21 @@ package sisosolsol.greenfire.feed.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import sisosolsol.greenfire.common.enums.image.ImageType;
 import sisosolsol.greenfire.common.exception.CustomException;
 import sisosolsol.greenfire.common.exception.type.ExceptionCode;
 import sisosolsol.greenfire.feed.model.dao.FeedMapper;
 import sisosolsol.greenfire.feed.model.dto.CommentCreateParam;
 import sisosolsol.greenfire.feed.model.dto.CommentDTO;
+import sisosolsol.greenfire.feed.model.dto.FeedCreateRequest;
 import sisosolsol.greenfire.feed.model.dto.FeedDetailDTO;
 import sisosolsol.greenfire.feed.model.dto.FeedListItemDTO;
 import sisosolsol.greenfire.feed.model.dto.FeedListResponse;
 import sisosolsol.greenfire.feed.model.dto.LikeToggleResponse;
+import sisosolsol.greenfire.feed.model.dto.PostInsertParam;
 import sisosolsol.greenfire.image.model.dto.ImageDTO;
+import sisosolsol.greenfire.image.service.ImageService;
 
 import java.util.List;
 import java.util.UUID;
@@ -22,6 +27,7 @@ import java.util.UUID;
 public class FeedService {
 
     private final FeedMapper feedMapper;
+    private final ImageService imageService;
 
     public FeedDetailDTO getFeedDetail(Integer postCode, UUID userCode) {
         FeedDetailDTO detail = feedMapper.getFeedDetail(postCode, userCode);
@@ -73,6 +79,29 @@ public class FeedService {
 
     public List<FeedListItemDTO> getFeaturedPosts(UUID userCode, int limit) {
         return feedMapper.getFeaturedPosts(userCode, limit);
+    }
+
+    @Transactional
+    public Integer createPost(FeedCreateRequest request, List<MultipartFile> images, UUID userCode) {
+        PostInsertParam param = new PostInsertParam();
+        param.setUserCode(userCode);
+        param.setPostContent(request.getPostContent());
+        param.setPostType(request.getPostType());
+        param.setStoreCode(request.getStoreCode());
+        param.setChallengeCode(request.getChallengeCode());
+
+        feedMapper.insertPost(param);
+        Integer postCode = param.getPostCode();
+
+        if (images != null && !images.isEmpty()) {
+            imageService.saveImages(ImageType.POST, postCode, images);
+            // 첫 이미지 path를 thumbnail로 박아둠 (피드 목록 그리드/챌린지 인증 그리드용)
+            List<ImageDTO> saved = feedMapper.getPostImages(postCode);
+            if (!saved.isEmpty()) {
+                feedMapper.updatePostThumbnail(postCode, saved.get(0).getPath());
+            }
+        }
+        return postCode;
     }
 
     @Transactional

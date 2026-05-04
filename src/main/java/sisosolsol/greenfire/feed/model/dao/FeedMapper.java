@@ -46,4 +46,9 @@ public interface FeedMapper {
 
     List<FeedListItemDTO> getFeaturedPosts(@Param("userCode") UUID userCode,
                                            @Param("limit") int limit);
+
+    void insertPost(sisosolsol.greenfire.feed.model.dto.PostInsertParam param);
+
+    void updatePostThumbnail(@Param("postCode") Integer postCode,
+                             @Param("thumbnail") String thumbnail);
 }
