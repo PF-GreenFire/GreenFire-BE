@@ -53,6 +53,7 @@ public class SecurityConfig {
                                 "/api/auth/password-reset/**",
                                 "/user/**",
                                 "/location/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/banners").permitAll()
                         .requestMatchers("/api/public/**", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
                         .anyRequest().authenticated()
                 )

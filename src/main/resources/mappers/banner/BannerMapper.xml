@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="sisosolsol.greenfire.banner.model.dao.BannerMapper">
+
+    <sql id="bannerColumns">
+        banner_code   AS bannerCode,
+        banner_title  AS bannerTitle,
+        link_url      AS linkUrl,
+        image_url     AS imageUrl,
+        display_order AS displayOrder,
+        is_active     AS isActive,
+        created_at    AS createdAt
+    </sql>
+
+    <select id="findActiveBanners" resultType="sisosolsol.greenfire.banner.model.dto.BannerDTO">
+        SELECT <include refid="bannerColumns"/>
+        FROM banner
+        WHERE is_active = TRUE
+        ORDER BY display_order ASC, banner_code ASC
+    </select>
+
+    <select id="findAllBanners" resultType="sisosolsol.greenfire.banner.model.dto.BannerDTO">
+        SELECT <include refid="bannerColumns"/>
+        FROM banner
+        ORDER BY display_order ASC, banner_code ASC
+    </select>
+
+    <select id="findByCode" resultType="sisosolsol.greenfire.banner.model.dto.BannerDTO">
+        SELECT <include refid="bannerColumns"/>
+        FROM banner
+        WHERE banner_code = #{bannerCode}
+    </select>
+
+    <insert id="insertBanner"
+            parameterType="sisosolsol.greenfire.banner.model.dto.BannerDTO"
+            useGeneratedKeys="true"
+            keyProperty="bannerCode"
+            keyColumn="banner_code">
+        INSERT INTO banner (banner_title, link_url, image_url, display_order, is_active)
+        VALUES (#{bannerTitle}, #{linkUrl}, #{imageUrl}, #{displayOrder}, #{isActive})
+    </insert>
+
+    <update id="updateBanner" parameterType="sisosolsol.greenfire.banner.model.dto.BannerDTO">
+        UPDATE banner
+        SET banner_title  = #{bannerTitle},
+            link_url      = #{linkUrl},
+            image_url     = #{imageUrl},
+            display_order = #{displayOrder},
+            is_active     = #{isActive},
+            updated_at    = CURRENT_TIMESTAMP
+        WHERE banner_code = #{bannerCode}
+    </update>
+
+    <delete id="deleteBanner">
+        DELETE FROM banner WHERE banner_code = #{bannerCode}
+    </delete>
+
+</mapper>
