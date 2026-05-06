@@ -32,6 +32,24 @@ public class UserController {
     private final UserService userService;
     private final AuthService authService;
 
+    /** 다른 사용자 공개 프로필. viewer 비로그인 OK (isFollowing=false) */
+    @GetMapping("/profile/{userId}")
+    public ResponseEntity<sisosolsol.greenfire.user.dto.PublicProfileResponse> getPublicProfile(
+            @PathVariable("userId") String userId,
+            @AuthenticationPrincipal AuthUser viewer) {
+        java.util.UUID targetCode;
+        try {
+            targetCode = java.util.UUID.fromString(userId);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+        java.util.UUID viewerCode = viewer != null ? viewer.userId() : null;
+        sisosolsol.greenfire.user.dto.PublicProfileResponse profile =
+                userService.getPublicProfile(targetCode, viewerCode);
+        if (profile == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(profile);
+    }
+
     @GetMapping("/me/summary")
     public ResponseEntity getUserSummaryData(@AuthenticationPrincipal AuthUser loginUser) {
         if (loginUser == null) return ResponseEntity.status(401).build();
@@ -64,6 +82,7 @@ public class UserController {
 
     @GetMapping("/me")
     public ResponseEntity<User> getUserProfile(@AuthenticationPrincipal AuthUser loginUser) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
         User user = userService.getUserProfile(loginUser.userId());
         return ResponseEntity.ok(user);
     }

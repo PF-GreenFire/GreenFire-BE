@@ -170,6 +170,46 @@ public class UserService {
         return userProfileDTO;
     }
 
+    /** 다른 사용자 공개 프로필. viewerCode null 가능(비로그인 조회) */
+    public sisosolsol.greenfire.user.dto.PublicProfileResponse getPublicProfile(UUID targetCode, UUID viewerCode) {
+        sisosolsol.greenfire.user.dto.PublicProfileRow row = userMapper.findPublicProfile(targetCode, viewerCode);
+        if (row == null) return null;
+
+        int total = row.getTotalSpark() == null ? 0 : row.getTotalSpark();
+        sisosolsol.greenfire.spark.model.dto.SparkInfo spark = sisosolsol.greenfire.spark.model.dto.SparkInfo.from(total);
+        boolean isMe = viewerCode != null && viewerCode.equals(targetCode);
+
+        // 보유 뱃지 중 최근 3개만 응답에 노출
+        java.util.List<sisosolsol.greenfire.user.dto.PublicProfileResponse.RecentBadge> recent =
+                badgeService.getUserBadges(targetCode).stream()
+                        .limit(3)
+                        .map(rec -> {
+                            try {
+                                sisosolsol.greenfire.badge.model.Badge b =
+                                        sisosolsol.greenfire.badge.model.Badge.valueOf(rec.getBadgeCode());
+                                return new sisosolsol.greenfire.user.dto.PublicProfileResponse.RecentBadge(
+                                        b.name(), b.getLabel(), b.getCategory(), b.getEmoji());
+                            } catch (IllegalArgumentException e) {
+                                return null; // 코드 미상 뱃지는 응답에서 제외 (rename 등 대응)
+                            }
+                        })
+                        .filter(java.util.Objects::nonNull)
+                        .toList();
+
+        return new sisosolsol.greenfire.user.dto.PublicProfileResponse(
+                row.getUserCode(),
+                row.getNickname(),
+                row.getProfileKey(),
+                row.getCoverKey(),
+                spark,
+                row.getFollowerCount(),
+                row.getFollowingCount(),
+                row.isFollowing(),
+                isMe,
+                recent
+        );
+    }
+
     public List<ChallengeDTO> getScrapChallenges(UUID userCode) {
         return userMapper.getScrapChallenges(userCode);
     }

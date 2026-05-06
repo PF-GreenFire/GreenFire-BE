@@ -42,4 +42,8 @@ public interface UserMapper {
     List<FriendDTO> getScrapFriends(UUID userCode);
 
     String findImagePathByImageCode(@Param("imageCode") int imageCode);
+
+    sisosolsol.greenfire.user.dto.PublicProfileRow findPublicProfile(
+            @Param("targetCode") UUID targetCode,
+            @Param("viewerCode") UUID viewerCode);
 }

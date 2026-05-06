@@ -185,4 +185,28 @@
         OR
             followers.user_code IS NOT NULL
     </select>
+
+    <!-- 공개 프로필: target 기본 정보 + 팔로우 카운트 + viewer가 팔로우 중인지 -->
+    <select id="findPublicProfile" resultType="sisosolsol.greenfire.user.dto.PublicProfileRow">
+        SELECT
+            u.user_code        AS userCode,
+            u.nickname         AS nickname,
+            u.profile_key      AS profileKey,
+            u.cover_image_key  AS coverKey,
+            COALESCE(u.total_spark, 0) AS totalSpark,
+            (SELECT COUNT(*) FROM user_follows WHERE target_user = u.user_code) AS followerCount,
+            (SELECT COUNT(*) FROM user_follows WHERE user_code = u.user_code)   AS followingCount,
+            <choose>
+                <when test="viewerCode != null">
+                    EXISTS(
+                        SELECT 1 FROM user_follows
+                        WHERE user_code = #{viewerCode}::uuid
+                          AND target_user = u.user_code
+                    )
+                </when>
+                <otherwise>FALSE</otherwise>
+            </choose> AS isFollowing
+        FROM users u
+        WHERE u.user_code = #{targetCode}::uuid
+    </select>
 </mapper>
