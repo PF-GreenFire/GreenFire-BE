@@ -40,4 +40,10 @@ public interface ChallengeMapper {
     int countActiveChallenges();
 
     List<ChallengeDTO> selectClosingSoon(@Param("limit") int limit);
+
+    // ─── 자동 상태 전이 ───
+    int bulkTransitionToOngoing();
+    int bulkTransitionToClosed();
+    List<ChallengeDTO> selectClosedChallenges();
+    List<UUID> selectParticipantCodes(@Param("challengeCode") Integer challengeCode);
 }

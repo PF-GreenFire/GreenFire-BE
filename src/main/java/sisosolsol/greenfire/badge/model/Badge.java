@@ -34,6 +34,12 @@ public enum Badge {
     STORE_5      ("동네 안내인",   "이정표", "매장 5개가 승인됐어요",        "🗺",
                   Outcome.STORE_APPROVED, new ThresholdEvaluator(5)),
 
+    // ─── 이정표 (챌린지 완료) ───
+    CHALLENGE_FIRST("첫 도전 완료", "이정표", "첫 챌린지를 완주했어요",      "🏁",
+                    Outcome.CHALLENGE_COMPLETE, new ThresholdEvaluator(1)),
+    CHALLENGE_5    ("도전의 연속", "이정표", "챌린지 5개를 완주했어요",      "🎯",
+                    Outcome.CHALLENGE_COMPLETE, new ThresholdEvaluator(5)),
+
     // ─── 등급 도달 ───
     TIER_SPROUT  ("새싹의 보호자", "등급",   "달팽이 등급에 도달했어요",     "🐌",
                   Outcome.TIER_REACHED, new TierReachedEvaluator(Tier.SNAIL)),

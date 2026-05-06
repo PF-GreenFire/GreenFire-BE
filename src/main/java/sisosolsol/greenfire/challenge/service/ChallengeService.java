@@ -27,6 +27,38 @@ import static sisosolsol.greenfire.common.exception.type.ExceptionCode.*;
 public class ChallengeService {
 
     private final ChallengeMapper challengeMapper;
+    private final sisosolsol.greenfire.spark.service.SparkService sparkService;
+    private final sisosolsol.greenfire.spark.model.dao.SparkMapper sparkMapper;
+
+    /**
+     * 매일 자정 이후 1회 호출되거나 어드민 수동 트리거로 호출.
+     * 1) RECRUITING → ONGOING (start_date 도래)
+     * 2) ONGOING → CLOSED (end_date 경과)
+     * 3) CLOSED 챌린지의 모든 참여자에게 challenge.xp 만큼 1회만 보상 (spark_history로 중복 방지)
+     */
+    public TransitionReport runStatusTransitions() {
+        int toOngoing = challengeMapper.bulkTransitionToOngoing();
+        int toClosed  = challengeMapper.bulkTransitionToClosed();
+
+        int rewardsGranted = 0;
+        for (ChallengeDTO ch : challengeMapper.selectClosedChallenges()) {
+            int reward = ch.getXp() == null ? 0 : ch.getXp();
+            if (reward <= 0) continue;
+            for (UUID userCode : challengeMapper.selectParticipantCodes(ch.getChallengeCode())) {
+                int already = sparkMapper.countHistory(userCode, "CHALLENGE_COMPLETE",
+                        "CHALLENGE", ch.getChallengeCode());
+                if (already > 0) continue;
+                sparkService.award(userCode, reward, "CHALLENGE_COMPLETE",
+                        "CHALLENGE", ch.getChallengeCode());
+                rewardsGranted++;
+            }
+        }
+        log.info("challenge transitions: toOngoing={}, toClosed={}, rewards={}",
+                toOngoing, toClosed, rewardsGranted);
+        return new TransitionReport(toOngoing, toClosed, rewardsGranted);
+    }
+
+    public record TransitionReport(int toOngoing, int toClosed, int rewardsGranted) {}
 
     public Integer registChallenge(ChallengeCreateDTO challengeCreate, UUID userId) {
         challengeCreate.setHostUser(userId);

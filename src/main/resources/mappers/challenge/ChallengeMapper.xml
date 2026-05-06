@@ -51,6 +51,34 @@
         WHERE challenge_code = #{challengeCode}
     </select>
 
+    <!-- ─── 자동 상태 전이 ─── -->
+    <update id="bulkTransitionToOngoing">
+        UPDATE challenge
+        SET challenge_status = 'ONGOING'
+        WHERE challenge_status = 'RECRUITING'
+          AND start_date &lt;= CURRENT_DATE
+    </update>
+
+    <update id="bulkTransitionToClosed">
+        UPDATE challenge
+        SET challenge_status = 'CLOSED'
+        WHERE challenge_status = 'ONGOING'
+          AND end_date &lt; CURRENT_DATE
+    </update>
+
+    <select id="selectClosedChallenges" resultType="sisosolsol.greenfire.challenge.model.dto.ChallengeDTO">
+        SELECT
+            challenge_code, created_at, challenge_title, challenge_content,
+            host_user, recruitment_num, start_date, end_date, xp,
+            thumbnail_url, challenge_category_code, challenge_status
+        FROM challenge
+        WHERE challenge_status = 'CLOSED'
+    </select>
+
+    <select id="selectParticipantCodes" resultType="java.util.UUID">
+        SELECT user_code FROM challenge_part WHERE challenge_code = #{challengeCode}
+    </select>
+
     <select id="selectClosingSoon" resultType="sisosolsol.greenfire.challenge.model.dto.ChallengeDTO">
         SELECT
             challenge_code,

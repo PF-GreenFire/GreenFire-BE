@@ -20,6 +20,13 @@ import java.util.UUID;
 public class AdminController {
 
     private final AdminService adminService;
+    private final sisosolsol.greenfire.challenge.service.ChallengeService challengeService;
+
+    /** 챌린지 상태 전이 + 보상을 즉시 실행. 데모/디버깅용. cron(매일 1:05)과 동일 로직. */
+    @PostMapping("/challenges/run-transitions")
+    public ResponseEntity<sisosolsol.greenfire.challenge.service.ChallengeService.TransitionReport> runChallengeTransitions() {
+        return ResponseEntity.ok(challengeService.runStatusTransitions());
+    }
 
     @GetMapping("/dashboard")
     public ResponseEntity<DashboardStatsResponse> getDashboardStats() {
