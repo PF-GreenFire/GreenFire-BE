@@ -34,6 +34,7 @@ public class UserController {
 
     @GetMapping("/me/summary")
     public ResponseEntity getUserSummaryData(@AuthenticationPrincipal AuthUser loginUser) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
         return ResponseEntity.ok(userService.getUserSummaryData(loginUser.userId()));
     }
 
