@@ -29,6 +29,8 @@ import sisosolsol.greenfire.common.security.jwt.JwtUtil;
 public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
+    private final sisosolsol.greenfire.auth.oauth.CustomOAuth2UserService customOAuth2UserService;
+    private final sisosolsol.greenfire.auth.oauth.OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -54,19 +56,19 @@ public class SecurityConfig {
                                 "/user/**",
                                 "/location/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/banners").permitAll()
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/api/public/**", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
                         .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth -> oauth
+                        .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
+                        .successHandler(oauth2LoginSuccessHandler)
                 )
                 .exceptionHandling(e -> e
                         .accessDeniedHandler(jwtAccessDeniedHandler())
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint())
                 )
                 .build();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 
     @Bean

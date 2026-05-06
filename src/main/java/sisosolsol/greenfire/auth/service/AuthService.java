@@ -334,6 +334,24 @@ public class AuthService {
         return local.charAt(0) + "*".repeat(local.length() - 2) + local.charAt(local.length() - 1) + domain;
     }
 
+    /**
+     * OAuth 성공 후 우리 JWT 발급. 일반 login()과 같은 토큰 흐름이지만 비밀번호 검증 단계는 생략한다.
+     * 호출자: OAuth2LoginSuccessHandler
+     */
+    @Transactional
+    public LoginResult issueTokensForOAuthUser(UserAccount user, String ipAddress) {
+        if (user.isDeleted() || user.isSuspended()) {
+            throw new BadCredentialsException("이 계정으로는 로그인할 수 없습니다.");
+        }
+        String accessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name());
+        long expiresIn = jwtUtil.getAccessExpSeconds();
+        String rawRefreshToken = jwtUtil.generateRefreshToken();
+        String family = UUID.randomUUID().toString();
+        saveRefreshToken(user.getId(), rawRefreshToken, family);
+        activityLogService.log(user.getId(), ActionType.LOGIN, ResourceType.AUTH, null, null, ipAddress);
+        return new LoginResult(new TokenResponse(accessToken, expiresIn), rawRefreshToken);
+    }
+
     private void saveRefreshToken(UUID userId, String rawToken, String family) {
         String hash = jwtUtil.hashToken(rawToken);
         Instant expiresAt = Instant.now().plusMillis(jwtUtil.getRefreshExpMillis());
