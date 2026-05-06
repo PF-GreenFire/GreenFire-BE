@@ -45,6 +45,7 @@ public class UserService {
     private final FileStorage fileStorage;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final sisosolsol.greenfire.badge.service.BadgeService badgeService;
 
     public User getUserProfile(UUID userCode) {
 //        try {
@@ -125,11 +126,46 @@ public class UserService {
                                                                 .build();
 
         User user = userMapper.findUserSummary(userCode);
+
+        // 뱃지 컬렉션 — Badge enum 전체 + 사용자 보유분 합쳐서 응답
+        java.util.List<sisosolsol.greenfire.badge.model.dto.UserBadgeRecord> ownedRecords = badgeService.getUserBadges(userCode);
+        java.util.Map<String, sisosolsol.greenfire.badge.model.dto.UserBadgeRecord> ownedMap = new java.util.HashMap<>();
+        for (sisosolsol.greenfire.badge.model.dto.UserBadgeRecord r : ownedRecords) {
+            ownedMap.put(r.getBadgeCode(), r);
+        }
+
+        java.util.List<sisosolsol.greenfire.badge.model.dto.AchievementBadgeDTO> achievementList = new java.util.ArrayList<>();
+        for (sisosolsol.greenfire.badge.model.Badge b : sisosolsol.greenfire.badge.model.Badge.values()) {
+            sisosolsol.greenfire.badge.model.dto.UserBadgeRecord owned = ownedMap.get(b.name());
+            boolean unlocked = owned != null;
+            boolean viewed = unlocked && owned.isViewed();
+            achievementList.add(
+                sisosolsol.greenfire.badge.model.dto.AchievementBadgeDTO.builder()
+                    .id(b.name())
+                    .name(b.getLabel())
+                    .category(b.getCategory())
+                    .description(b.getDescription())
+                    .image(b.getEmoji())
+                    .unlocked(unlocked)
+                    .unlockedDate(owned != null ? owned.getEarnedAt() : null)
+                    .isNew(unlocked && !viewed)
+                    .isViewed(viewed)
+                    .build()
+            );
+        }
+        sisosolsol.greenfire.badge.model.dto.AchievementSummaryDTO achievementSummary =
+            sisosolsol.greenfire.badge.model.dto.AchievementSummaryDTO.builder()
+                .totalCount(ownedRecords.size())
+                .totalDefined(sisosolsol.greenfire.badge.model.Badge.values().length)
+                .achievements(achievementList)
+                .build();
+
         UserProfileDTO userProfileDTO = UserProfileDTO.builder()
                                                     .user(user)
                                                     .scrapbookSummary(scrapbookSummary)
                                                     .challengeSummary(challengeSummary)
                                                     .echoMemorySummary(echoMemorySummary)
+                                                    .achievementSummary(achievementSummary)
                                                     .build();
         return userProfileDTO;
     }

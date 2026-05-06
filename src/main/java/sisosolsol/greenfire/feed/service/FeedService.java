@@ -117,7 +117,7 @@ public class FeedService {
         }
 
         // 인증글 작성 보상
-        sparkService.award(userCode, 5, "POST_CREATE", "POST", postCode);
+        sparkService.award(userCode, 5, "POST_CREATED", "POST", postCode);
 
         return postCode;
     }
