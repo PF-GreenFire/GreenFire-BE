@@ -31,6 +31,7 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final UserAccountRepository userAccountRepository;
     private final ActivityLogService activityLogService;
+    private final sisosolsol.greenfire.notification.service.NotificationService notificationService;
 
     /**
      * 신고 접수
@@ -127,6 +128,11 @@ public class ReportService {
         }
 
         report.handle(request.getStatus(), adminId, request.getAdminNote());
+
+        // 신고자에게 처리 결과 알림
+        notificationService.notify(report.getReporterId(),
+                sisosolsol.greenfire.notification.model.NotificationType.REPORT_HANDLED,
+                null, "REPORT", reportId.toString());
 
         // 활동 로그 기록
         activityLogService.log(

@@ -45,5 +45,6 @@ public interface ChallengeMapper {
     int bulkTransitionToOngoing();
     int bulkTransitionToClosed();
     List<ChallengeDTO> selectClosedChallenges();
+    List<ChallengeDTO> selectOngoingChallenges();
     List<UUID> selectParticipantCodes(@Param("challengeCode") Integer challengeCode);
 }

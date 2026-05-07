@@ -29,6 +29,7 @@ public class StoreService {
     private final LocationService locationService;
     private final ImageService imageService;
     private final SparkService sparkService;
+    private final sisosolsol.greenfire.notification.service.NotificationService notificationService;
 
     // 초록불 메인 장소 목록 조회 TODO: 현재 위치 정보를 기반으로 반경 지도 목록을 보여주는 것으로 수정 예정
     public List<StoreListDTO> getStoreList(UUID userCode) {
@@ -103,12 +104,19 @@ public class StoreService {
     public void updateStoreStatus(int storeCode, StoreUpdateStatusDTO storeUpdateStatusDTO) {
         storeMapper.updateStoreStatus(storeCode, storeUpdateStatusDTO);
 
-        // 승인 시 신청자에게 spark 적립 (REJECT/DELETE는 0). 캡 처리는 sparkService 내부 logic 추후 보강.
-        if (storeUpdateStatusDTO.getStatus() == sisosolsol.greenfire.common.enums.store.StoreStatus.APPROVE) {
-            UUID applicant = storeMapper.findApplicantUserCode(storeCode);
-            if (applicant != null) {
-                sparkService.award(applicant, 50, "STORE_APPROVED", "STORE", storeCode);
-            }
+        UUID applicant = storeMapper.findApplicantUserCode(storeCode);
+        if (applicant == null) return;
+
+        var status = storeUpdateStatusDTO.getStatus();
+        if (status == sisosolsol.greenfire.common.enums.store.StoreStatus.APPROVE) {
+            sparkService.award(applicant, 50, "STORE_APPROVED", "STORE", storeCode);
+            notificationService.notify(applicant,
+                    sisosolsol.greenfire.notification.model.NotificationType.STORE_APPROVED,
+                    null, "STORE", String.valueOf(storeCode));
+        } else if (status == sisosolsol.greenfire.common.enums.store.StoreStatus.REJECT) {
+            notificationService.notify(applicant,
+                    sisosolsol.greenfire.notification.model.NotificationType.STORE_REJECTED,
+                    null, "STORE", String.valueOf(storeCode));
         }
     }
 

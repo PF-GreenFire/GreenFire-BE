@@ -23,4 +23,10 @@ public interface NotificationMapper {
                   @Param("recipientCode") UUID recipientCode);
 
     void markAllRead(@Param("recipientCode") UUID recipientCode);
+
+    int countByRecipientAndTypeAndResource(
+            @Param("recipientCode") UUID recipientCode,
+            @Param("type") String type,
+            @Param("resourceType") String resourceType,
+            @Param("resourceCode") String resourceCode);
 }

@@ -41,11 +41,25 @@ public class ChallengeService {
         int toOngoing = challengeMapper.bulkTransitionToOngoing();
         int toClosed  = challengeMapper.bulkTransitionToClosed();
 
+        // 1) ONGOING 전이 — 참여자에게 시작 알림 (1회성, idempotent)
+        // 다음 호출에서 같은 챌린지가 또 ONGOING이어도 알림은 한 번만 발송됨.
+        for (ChallengeDTO ch : challengeMapper.selectOngoingChallenges()) {
+            for (UUID userCode : challengeMapper.selectParticipantCodes(ch.getChallengeCode())) {
+                notificationService.notifyIfAbsent(userCode,
+                        sisosolsol.greenfire.notification.model.NotificationType.CHALLENGE_STARTED,
+                        null, "CHALLENGE", String.valueOf(ch.getChallengeCode()));
+            }
+        }
+
+        // 2) CLOSED 전이 — 보상 + 종료 알림
         int rewardsGranted = 0;
         for (ChallengeDTO ch : challengeMapper.selectClosedChallenges()) {
             int reward = ch.getXp() == null ? 0 : ch.getXp();
             if (reward <= 0) continue;
+            UUID hostUser = ch.getHostUser();
             for (UUID userCode : challengeMapper.selectParticipantCodes(ch.getChallengeCode())) {
+                // 호스트 self-skip — 본인이 만든 챌린지로 본인 보상 막기
+                if (userCode.equals(hostUser)) continue;
                 int already = sparkMapper.countHistory(userCode, "CHALLENGE_COMPLETE",
                         "CHALLENGE", ch.getChallengeCode());
                 if (already > 0) continue;

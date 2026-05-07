@@ -60,4 +60,12 @@
           AND is_read = FALSE
     </update>
 
+    <select id="countByRecipientAndTypeAndResource" resultType="int">
+        SELECT COUNT(*) FROM notification
+        WHERE recipient_code = #{recipientCode}::uuid
+          AND type = #{type}
+          AND resource_type = #{resourceType}
+          AND resource_code = #{resourceCode}
+    </select>
+
 </mapper>

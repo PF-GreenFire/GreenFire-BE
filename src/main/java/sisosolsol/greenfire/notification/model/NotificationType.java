@@ -13,7 +13,13 @@ public enum NotificationType {
     FOLLOWED           ("👥"),  // 팔로우 받음
     CHALLENGE_REWARDED ("🎁"),  // 챌린지 종료, 보상 받음
     TIER_REACHED       ("🏅"),  // 새 등급 도달
-    BADGE_EARNED       ("🏆");  // 새 뱃지 획득
+    BADGE_EARNED       ("🏆"), // 새 뱃지 획득
+
+    // ─── B 라운드 추가 ───
+    CHALLENGE_STARTED  ("🚀"), // 참여한 챌린지 시작 (RECRUITING → ONGOING)
+    STORE_APPROVED     ("✅"), // 내가 신청한 매장 승인됨
+    STORE_REJECTED     ("❌"), // 내가 신청한 매장 반려됨
+    REPORT_HANDLED     ("⚖️");  // 내 신고가 처리됨
 
     private final String emoji;
 

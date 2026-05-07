@@ -66,6 +66,15 @@
           AND end_date &lt; CURRENT_DATE
     </update>
 
+    <select id="selectOngoingChallenges" resultType="sisosolsol.greenfire.challenge.model.dto.ChallengeDTO">
+        SELECT
+            challenge_code, created_at, challenge_title, challenge_content,
+            host_user, recruitment_num, start_date, end_date, xp,
+            thumbnail_url, challenge_category_code, challenge_status
+        FROM challenge
+        WHERE challenge_status = 'ONGOING'
+    </select>
+
     <select id="selectClosedChallenges" resultType="sisosolsol.greenfire.challenge.model.dto.ChallengeDTO">
         SELECT
             challenge_code, created_at, challenge_title, challenge_content,

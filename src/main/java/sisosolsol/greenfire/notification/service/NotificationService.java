@@ -55,6 +55,18 @@ public class NotificationService {
         notify(recipient, type, actor, resourceType, resourceCode, defaultTitle(type));
     }
 
+    /** 같은 (recipient, type, resource) 조합이 이미 있으면 발송 X. 챌린지 시작 등 1회성 알림용. */
+    public void notifyIfAbsent(UUID recipient, NotificationType type, UUID actor,
+                               String resourceType, String resourceCode) {
+        if (recipient == null || type == null) return;
+        if (resourceType != null && resourceCode != null) {
+            int existing = notificationMapper.countByRecipientAndTypeAndResource(
+                    recipient, type.name(), resourceType, resourceCode);
+            if (existing > 0) return;
+        }
+        notify(recipient, type, actor, resourceType, resourceCode);
+    }
+
     private String defaultTitle(NotificationType type) {
         return switch (type) {
             case POST_LIKED         -> "내 인증글에 좋아요가 도착했어요";
@@ -63,6 +75,10 @@ public class NotificationService {
             case CHALLENGE_REWARDED -> "챌린지 보상을 받았어요";
             case TIER_REACHED       -> "등급이 올라갔어요";
             case BADGE_EARNED       -> "새 뱃지를 획득했어요";
+            case CHALLENGE_STARTED  -> "참여 중인 챌린지가 시작됐어요";
+            case STORE_APPROVED     -> "신청한 매장이 승인됐어요";
+            case STORE_REJECTED     -> "신청한 매장이 반려됐어요";
+            case REPORT_HANDLED     -> "내가 보낸 신고가 처리됐어요";
         };
     }
 

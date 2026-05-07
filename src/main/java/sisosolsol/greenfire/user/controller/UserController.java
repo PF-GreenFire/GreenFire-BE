@@ -58,6 +58,7 @@ public class UserController {
 
     @GetMapping("/scraps/challenges")
     public ResponseEntity getScrapChallenges(@AuthenticationPrincipal AuthUser loginUser) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
         return ResponseEntity.ok(userService.getScrapChallenges(loginUser.userId()));
     }
 
@@ -77,6 +78,7 @@ public class UserController {
 
     @GetMapping("/scraps/friends")
     public ResponseEntity getScrapFriends(@AuthenticationPrincipal AuthUser loginUser) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
         return ResponseEntity.ok(userService.getScrapFriends(loginUser.userId()));
     }
 
@@ -119,6 +121,7 @@ public class UserController {
     public ResponseEntity<User> updateUserProfile(@AuthenticationPrincipal AuthUser loginUser,
         @RequestPart("data") @Valid UpdateUserDTO request,
         @RequestPart(value = "image", required = false) MultipartFile file) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
         User updatedProfile = userService.updateUserProfile(loginUser.userId(), request, file);
         return ResponseEntity.ok(updatedProfile);
     }
@@ -126,6 +129,7 @@ public class UserController {
     @PutMapping("/me/password")
     public ResponseEntity<Void> changePassword(@AuthenticationPrincipal AuthUser loginUser,
         @RequestBody @Valid PasswordChangeRequest request) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
         userService.changePassword(loginUser.userId(), request);
         return ResponseEntity.ok().build();
     }
@@ -134,6 +138,7 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal AuthUser loginUser,
         @Valid @RequestBody DeleteAccountRequest request,
         HttpServletRequest httpRequest) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
         authService.deleteAccount(loginUser.userId(), request.password(), request.reason(), httpRequest.getRemoteAddr());
         return ResponseEntity.ok().build();
     }
@@ -141,6 +146,7 @@ public class UserController {
     @PostMapping("/follows/{targetCode}")
     public ResponseEntity<Void> followUser(@AuthenticationPrincipal AuthUser loginUser,
         @PathVariable("targetCode") String targetUser) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
         userService.followUser(loginUser.userId(), UUID.fromString(targetUser));
         return ResponseEntity.ok().build();
     }
@@ -148,6 +154,7 @@ public class UserController {
     @DeleteMapping("/follows/{targetCode}")
     public ResponseEntity<Void> unfollowUser(@AuthenticationPrincipal AuthUser loginUser,
         @PathVariable("targetCode") String targetUser) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
         userService.deleteFollow(loginUser.userId(), UUID.fromString(targetUser));
         return ResponseEntity.ok().build();
     }
@@ -156,6 +163,7 @@ public class UserController {
     public ResponseEntity<String> changeCoverImage(@AuthenticationPrincipal AuthUser loginUser,
         @RequestPart("data") @Valid UpdateCoverImageDTO request,
         @RequestPart(value = "image", required = false) MultipartFile file) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
         String coverStorageKey = userService.changeCoverImage(loginUser.userId(), request, file);
         return ResponseEntity.ok(coverStorageKey);
     }

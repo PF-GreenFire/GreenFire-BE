@@ -58,10 +58,15 @@ dependencies {
 
 
 tasks.register('copyYML', Copy) {
-    from('../GreenFire-key') {
-        include '*.yml'
+    // GreenFire-key submodule 위치는 환경마다 다름 (BE 안 / parent 디렉토리). 두 후보 중 존재하는 쪽 사용.
+    def candidates = [file('GreenFire-key'), file('../GreenFire-key')]
+    def keyDir = candidates.find { it.exists() }
+    if (keyDir != null) {
+        from(keyDir) {
+            include '*.yml'
+        }
+        into './src/main/resources'
     }
-    into './src/main/resources'
 }
 processResources.dependsOn(tasks.named('copyYML'))
 
