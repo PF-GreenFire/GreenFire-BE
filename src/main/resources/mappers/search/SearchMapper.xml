@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="sisosolsol.greenfire.search.dao.SearchMapper">
+
+    <!-- 챌린지: title / content LIKE. 모집중·진행중 우선, 종료된 것도 포함하되 최신순 -->
+    <select id="searchChallenges" resultType="sisosolsol.greenfire.search.dto.SearchHit">
+        SELECT
+            'CHALLENGE'                  AS type,
+            challenge_code::text         AS id,
+            challenge_title              AS title,
+            ''                           AS subtitle,
+            thumbnail_url                AS thumbnail
+        FROM challenge
+        WHERE (challenge_title  ILIKE '%' || #{q} || '%'
+            OR challenge_content ILIKE '%' || #{q} || '%')
+        ORDER BY
+            CASE challenge_status
+                WHEN 'RECRUITING' THEN 1
+                WHEN 'ONGOING'    THEN 2
+                ELSE 3
+            END,
+            created_at DESC
+        LIMIT #{size}
+    </select>
+
+    <!-- 매장: store_name / 주소 LIKE. 승인된 매장만 노출 -->
+    <select id="searchStores" resultType="sisosolsol.greenfire.search.dto.SearchHit">
+        SELECT
+            'STORE'                      AS type,
+            s.store_code::text           AS id,
+            s.store_name                 AS title,
+            COALESCE(l.address, '')      AS subtitle,
+            NULL                         AS thumbnail
+        FROM store s
+        LEFT JOIN location l ON s.location_code = l.location_code
+        WHERE s.store_status = 'APPROVE'
+          AND (s.store_name ILIKE '%' || #{q} || '%'
+            OR l.address    ILIKE '%' || #{q} || '%')
+        ORDER BY s.created_at DESC
+        LIMIT #{size}
+    </select>
+
+    <!-- 피드: post_content LIKE. ACTIVE만 -->
+    <select id="searchPosts" resultType="sisosolsol.greenfire.search.dto.SearchHit">
+        SELECT
+            'POST'                       AS type,
+            post_code::text              AS id,
+            LEFT(post_content, 40)       AS title,
+            ''                           AS subtitle,
+            thumbnail                    AS thumbnail
+        FROM post
+        WHERE post_status = 'ACTIVE'
+          AND post_content ILIKE '%' || #{q} || '%'
+        ORDER BY post_code DESC
+        LIMIT #{size}
+    </select>
+
+    <!-- 사용자: nickname LIKE -->
+    <select id="searchUsers" resultType="sisosolsol.greenfire.search.dto.SearchHit">
+        SELECT
+            'USER'                       AS type,
+            u.user_code::text            AS id,
+            u.nickname                   AS title,
+            ''                           AS subtitle,
+            NULL                         AS thumbnail
+        FROM users u
+        WHERE u.nickname ILIKE '%' || #{q} || '%'
+        ORDER BY u.nickname ASC
+        LIMIT #{size}
+    </select>
+
+</mapper>
