@@ -46,6 +46,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
     private final sisosolsol.greenfire.badge.service.BadgeService badgeService;
+    private final sisosolsol.greenfire.notification.service.NotificationService notificationService;
 
     public User getUserProfile(UUID userCode) {
 //        try {
@@ -245,6 +246,9 @@ public class UserService {
 
     public void followUser(UUID userCode, UUID targetUser) {
         userMapper.followUser(userCode, targetUser);
+        notificationService.notify(targetUser,
+                sisosolsol.greenfire.notification.model.NotificationType.FOLLOWED,
+                userCode, "USER", userCode.toString());
     }
 
     public void deleteFollow(UUID userCode, UUID targetUser) {

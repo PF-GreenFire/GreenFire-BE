@@ -19,12 +19,15 @@ public class SparkService {
 
     private final SparkMapper sparkMapper;
     private final BadgeService badgeService;
+    private final sisosolsol.greenfire.notification.service.NotificationService notificationService;
 
     // BadgeService(SparkMapper 사용) ↔ SparkService 잠재 순환을 끊기 위해 lazy
     public SparkService(SparkMapper sparkMapper,
-                        @Lazy @Autowired BadgeService badgeService) {
+                        @Lazy @Autowired BadgeService badgeService,
+                        sisosolsol.greenfire.notification.service.NotificationService notificationService) {
         this.sparkMapper = sparkMapper;
         this.badgeService = badgeService;
+        this.notificationService = notificationService;
     }
 
     public static final int LIKE_PER_REWARD = 10;   // 좋아요 N개 단위로 +1
@@ -51,6 +54,17 @@ public class SparkService {
             log.warn("spark award failed: user={} action={} amount={} ({})",
                     userCode, action, amount, e.getMessage());
             return 0;
+        }
+
+        // 등급 변동 감지 → 알림
+        sisosolsol.greenfire.common.enums.spark.Tier prevTier =
+                sisosolsol.greenfire.common.enums.spark.Tier.of(total - amount);
+        sisosolsol.greenfire.common.enums.spark.Tier newTier =
+                sisosolsol.greenfire.common.enums.spark.Tier.of(total);
+        if (newTier != prevTier) {
+            notificationService.notify(userCode,
+                    sisosolsol.greenfire.notification.model.NotificationType.TIER_REACHED,
+                    null, "USER", userCode.toString());
         }
 
         // 뱃지 후크 (실패해도 본 트랜잭션 깨지 않게 BadgeService 내부 try/catch)

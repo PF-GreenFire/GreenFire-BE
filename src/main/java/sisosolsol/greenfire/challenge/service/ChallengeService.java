@@ -29,6 +29,7 @@ public class ChallengeService {
     private final ChallengeMapper challengeMapper;
     private final sisosolsol.greenfire.spark.service.SparkService sparkService;
     private final sisosolsol.greenfire.spark.model.dao.SparkMapper sparkMapper;
+    private final sisosolsol.greenfire.notification.service.NotificationService notificationService;
 
     /**
      * 매일 자정 이후 1회 호출되거나 어드민 수동 트리거로 호출.
@@ -50,6 +51,9 @@ public class ChallengeService {
                 if (already > 0) continue;
                 sparkService.award(userCode, reward, "CHALLENGE_COMPLETE",
                         "CHALLENGE", ch.getChallengeCode());
+                notificationService.notify(userCode,
+                        sisosolsol.greenfire.notification.model.NotificationType.CHALLENGE_REWARDED,
+                        null, "CHALLENGE", String.valueOf(ch.getChallengeCode()));
                 rewardsGranted++;
             }
         }

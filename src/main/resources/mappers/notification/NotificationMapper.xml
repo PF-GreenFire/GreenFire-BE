@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="sisosolsol.greenfire.notification.model.dao.NotificationMapper">
+
+    <insert id="insert"
+            parameterType="sisosolsol.greenfire.notification.model.dto.NotificationCreateParam"
+            useGeneratedKeys="true"
+            keyProperty="notificationCode"
+            keyColumn="notification_code">
+        INSERT INTO notification (recipient_code, type, title, actor_code, resource_type, resource_code)
+        VALUES (
+            #{recipientCode}::uuid,
+            #{type},
+            #{title},
+            <choose>
+                <when test="actorCode != null">#{actorCode}::uuid</when>
+                <otherwise>NULL</otherwise>
+            </choose>,
+            #{resourceType},
+            #{resourceCode}
+        )
+    </insert>
+
+    <select id="findByRecipient" resultType="sisosolsol.greenfire.notification.model.dto.NotificationDTO">
+        SELECT
+            notification_code AS notificationCode,
+            type              AS type,
+            title             AS title,
+            actor_code        AS actorCode,
+            resource_type     AS resourceType,
+            resource_code     AS resourceCode,
+            is_read           AS read,
+            created_at        AS createdAt
+        FROM notification
+        WHERE recipient_code = #{recipientCode}::uuid
+        <if test="unreadOnly">AND is_read = FALSE</if>
+        ORDER BY notification_code DESC
+        LIMIT #{size}
+    </select>
+
+    <select id="countUnread" resultType="int">
+        SELECT COUNT(*) FROM notification
+        WHERE recipient_code = #{recipientCode}::uuid
+          AND is_read = FALSE
+    </select>
+
+    <update id="markRead">
+        UPDATE notification
+        SET is_read = TRUE
+        WHERE notification_code = #{notificationCode}
+          AND recipient_code = #{recipientCode}::uuid
+    </update>
+
+    <update id="markAllRead">
+        UPDATE notification
+        SET is_read = TRUE
+        WHERE recipient_code = #{recipientCode}::uuid
+          AND is_read = FALSE
+    </update>
+
+</mapper>

@@ -30,6 +30,7 @@ public class FeedService {
     private final FeedMapper feedMapper;
     private final ImageService imageService;
     private final SparkService sparkService;
+    private final sisosolsol.greenfire.notification.service.NotificationService notificationService;
 
     public FeedDetailDTO getFeedDetail(Integer postCode, UUID userCode) {
         FeedDetailDTO detail = feedMapper.getFeedDetail(postCode, userCode);
@@ -62,6 +63,16 @@ public class FeedService {
             }
         }
 
+        // 좋아요 추가 시 작성자에게 알림 1회 (좋아요 토글마다 알림 X — 추가 시점에만)
+        if (!alreadyLiked) {
+            FeedDetailDTO detail = feedMapper.getFeedDetail(postCode, null);
+            if (detail != null && detail.getUserCode() != null) {
+                notificationService.notify(detail.getUserCode(),
+                        sisosolsol.greenfire.notification.model.NotificationType.POST_LIKED,
+                        userCode, "POST", String.valueOf(postCode));
+            }
+        }
+
         return new LikeToggleResponse(!alreadyLiked, count);
     }
 
@@ -73,6 +84,14 @@ public class FeedService {
     public CommentDTO addComment(Integer postCode, UUID userCode, String content) {
         CommentCreateParam param = new CommentCreateParam(postCode, userCode, content);
         feedMapper.insertComment(param);
+
+        // 작성자에게 댓글 알림 (본인 댓글 제외)
+        FeedDetailDTO detail = feedMapper.getFeedDetail(postCode, null);
+        if (detail != null && detail.getUserCode() != null) {
+            notificationService.notify(detail.getUserCode(),
+                    sisosolsol.greenfire.notification.model.NotificationType.POST_COMMENTED,
+                    userCode, "POST", String.valueOf(postCode));
+        }
         return feedMapper.getComment(param.getCommentCode());
     }
 

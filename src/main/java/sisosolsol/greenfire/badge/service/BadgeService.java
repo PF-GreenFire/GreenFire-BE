@@ -29,6 +29,7 @@ public class BadgeService {
 
     private final BadgeMapper badgeMapper;
     private final SparkMapper sparkMapper;
+    private final sisosolsol.greenfire.notification.service.NotificationService notificationService;
 
     @Transactional
     public List<Badge> checkAfterOutcome(UUID userCode, Outcome outcome, int totalSpark) {
@@ -49,6 +50,9 @@ public class BadgeService {
 
                 badgeMapper.insert(userCode, b.name());
                 awarded.add(b);
+                notificationService.notify(userCode,
+                        sisosolsol.greenfire.notification.model.NotificationType.BADGE_EARNED,
+                        null, "BADGE", b.name());
             }
             return awarded;
         } catch (Exception e) {
