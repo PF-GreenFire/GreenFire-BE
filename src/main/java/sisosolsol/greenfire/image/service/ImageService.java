@@ -92,7 +92,11 @@ public class ImageService {
     }
 
     public void deleteImage(Integer imageCode) {
-        // TODO: 이미지 경로를 조회한 후 파일 삭제
+        ImageDTO image = imageMapper.findByImageCode(imageCode);
+        if (image == null) {
+            return;
+        }
+        fileUploadUtil.deleteFile(image.getPath());
         imageMapper.deleteByImageCode(imageCode);
     }
 

@@ -92,6 +92,22 @@
         WHERE image_code = #{imageCode}
     </delete>
 
+    <!-- 특정 이미지 단건 조회 -->
+    <select id="findByImageCode" resultType="sisosolsol.greenfire.image.model.dto.ImageDTO">
+        SELECT
+            image_code as imageCode,
+            reference_type as referenceType,
+            reference_code as referenceCode,
+            path,
+            origin_name as originName,
+            file_name as fileName,
+            "order"
+        FROM
+            image
+        WHERE
+            image_code = #{imageCode}
+    </select>
+
     <!-- 이미지 개수 조회 -->
     <select id="countByReference" resultType="int">
         SELECT

@@ -29,6 +29,8 @@ public interface ImageMapper {
 
     void deleteByImageCode(Integer imageCode);
 
+    ImageDTO findByImageCode(Integer imageCode);
+
     int countByReference(@Param("referenceType") String referenceType,
                          @Param("referenceCode") Integer referenceCode);
 }
