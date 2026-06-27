@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,13 +41,27 @@ public class LocationController {
         return ResponseEntity.ok(storeService.getStoreCategories());
     }
 
-    // 초록불 메인 장소 목록 조회 TODO: 현재 위치 정보를 기반으로 반경 지도 목록을 보여주는 것으로 수정 예정, 썸네일이 필요할것 같은 예감인데 order값 1인 것으로 할지 썸네일 만들지 추후 협의 및 적용 예정
+    // 초록불 메인 장소 목록 조회 (좌표 없이 전체)
     @Operation(summary = "초록불 메인 장소 목록 조회")
     @GetMapping
     public ResponseEntity<List<StoreListDTO>> getStoreList(@AuthenticationPrincipal AuthUser user) {
         UUID userId = user != null ? user.userId() : null;
         List<StoreListDTO> stores = storeService.getStoreList(userId);
         return ResponseEntity.ok(stores);
+    }
+
+    // 현재 위치 기반 반경 내 장소 조회. Haversine 거리로 필터링 후 가까운 순.
+    @Operation(summary = "내 주변 장소 조회 (위도/경도/반경km)")
+    @GetMapping("/nearby")
+    public ResponseEntity<List<StoreListDTO>> getNearbyStoreList(
+            @RequestParam Double latitude,
+            @RequestParam Double longitude,
+            @RequestParam(defaultValue = "3.0") Double radiusKm,
+            @AuthenticationPrincipal AuthUser user) {
+        UUID userId = user != null ? user.userId() : null;
+        return ResponseEntity.ok(
+                storeService.getNearbyStoreList(userId, latitude, longitude, radiusKm)
+        );
     }
 
     @Operation(summary = "장소 이미지 조회")

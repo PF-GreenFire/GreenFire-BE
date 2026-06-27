@@ -38,9 +38,17 @@ public class StoreService {
     private final SparkService sparkService;
     private final sisosolsol.greenfire.notification.service.NotificationService notificationService;
 
-    // 초록불 메인 장소 목록 조회 TODO: 현재 위치 정보를 기반으로 반경 지도 목록을 보여주는 것으로 수정 예정
+    // 초록불 메인 장소 목록 조회 (좌표 없을 때 전체 list)
     public List<StoreListDTO> getStoreList(UUID userCode) {
         return storeMapper.findStoreList(userCode);
+    }
+
+    // 현재 위치 기반 반경(km) 내 장소 조회 (가까운 순)
+    public List<StoreListDTO> getNearbyStoreList(UUID userCode,
+                                                 double latitude,
+                                                 double longitude,
+                                                 double radiusKm) {
+        return storeMapper.findStoreListWithinRadius(userCode, latitude, longitude, radiusKm);
     }
 
     // 관리자 초록불 장소 상태에 따른 목록 페이징 조회 [신청 대기, 신청 승인]

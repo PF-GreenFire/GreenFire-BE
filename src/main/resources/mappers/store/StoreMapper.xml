@@ -54,7 +54,7 @@
             store_category
     </select>
 
-    <!--  초록불 장소 목록 조회 TODO: 현재 위치 정보를 기반으로 반경 지도 목록을 보여주는 것으로 수정 예정 -->
+    <!-- 좌표 없을 때 전체 list. 좌표 기반 필터는 findStoreListWithinRadius 사용 -->
         <select id="findStoreList" resultMap="storeListResultMap">
             SELECT
                 s.store_code,
@@ -86,6 +86,52 @@
             GROUP BY
                 s.store_code,  l.address, i.image_code, l.latitude, l.longitude, l.area_code
         </select>
+
+    <!-- 현재 위치 기반 반경(km) 내 장소 조회. Haversine 거리(지구반경 6371km) -->
+    <select id="findStoreListWithinRadius" resultMap="storeListResultMap">
+        SELECT
+            s.store_code,
+            s.store_name,
+            s.store_category_code,
+            s.description,
+            s.thumbnail_url,
+            MAX(CASE WHEN sl.user_code = #{userCode} THEN 1 ELSE 0 END) AS liked,
+            l.address,
+            i.image_code,
+            l.latitude,
+            l.longitude
+        FROM
+            store s
+        LEFT JOIN
+            store_like sl ON s.store_code = sl.store_code
+        INNER JOIN
+            location l ON s.location_code = l.location_code
+        LEFT JOIN
+            image i ON i.reference_type = 'STORE' AND s.store_code::text = i.reference_code
+        WHERE
+            s.store_status = 'APPROVE'
+            AND l.latitude IS NOT NULL
+            AND l.longitude IS NOT NULL
+            AND (
+                6371 * acos(
+                    LEAST(1.0, GREATEST(-1.0,
+                        cos(radians(#{latitude})) * cos(radians(l.latitude))
+                        * cos(radians(l.longitude) - radians(#{longitude}))
+                        + sin(radians(#{latitude})) * sin(radians(l.latitude))
+                    ))
+                )
+            ) &lt;= #{radiusKm}
+        GROUP BY
+            s.store_code, l.address, i.image_code, l.latitude, l.longitude, l.area_code
+        ORDER BY
+            6371 * acos(
+                LEAST(1.0, GREATEST(-1.0,
+                    cos(radians(#{latitude})) * cos(radians(l.latitude))
+                    * cos(radians(l.longitude) - radians(#{longitude}))
+                    + sin(radians(#{latitude})) * sin(radians(l.latitude))
+                ))
+            ) ASC
+    </select>
 
     <select id="findImagePathByImageCode">
         SELECT

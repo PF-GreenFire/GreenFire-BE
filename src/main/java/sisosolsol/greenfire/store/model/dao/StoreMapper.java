@@ -10,8 +10,14 @@ import java.util.UUID;
 
 @Mapper
 public interface StoreMapper {
-    // 초록불 장소 목록 조회 TODO: 현재 위치 정보를 기반으로 반경 지도 목록을 보여주는 것으로 수정 예정
+    // 초록불 장소 목록 조회 (좌표 없을 때 전체 list)
     List<StoreListDTO> findStoreList(@Param("userCode") UUID userCode);
+
+    // 현재 위치 기반 반경(km) 내 장소 조회. Haversine 거리로 필터링 후 가까운 순 정렬
+    List<StoreListDTO> findStoreListWithinRadius(@Param("userCode") UUID userCode,
+                                                 @Param("latitude") double latitude,
+                                                 @Param("longitude") double longitude,
+                                                 @Param("radiusKm") double radiusKm);
 
     // 관리자 초록불 장소 상태에 따른 목록 페이징 조회를 위한 토탈 갯수 조회
     int countStoresByStoreStatus(String storeStatus);
