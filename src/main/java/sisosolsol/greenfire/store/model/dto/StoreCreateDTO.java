@@ -27,6 +27,7 @@ public class StoreCreateDTO {
     private String detailAddress;
     private String description;
     private String storeBreaktimeHours;
+    private String thumbnailUrl;
     private UUID userCode;
     private List<ImageUploadDTO> images;
 

@@ -10,6 +10,7 @@
             <result property="liked" column="liked"/>
             <result property="address" column="address"/>
             <result property="imageCode" column="image_code"/>
+            <result property="thumbnailUrl" column="thumbnail_url"/>
             <result property="latitude" column="latitude"/>
             <result property="longitude" column="longitude"/>
         </resultMap>
@@ -34,6 +35,7 @@
             <result property="address" column="address" />
             <result property="description" column="description" />
             <result property="storeBreaktimeHours" column="store_breaktime_hours" />
+            <result property="thumbnailUrl" column="thumbnail_url" />
             <result property="likeCount" column="like_count" />
             <result property="liked" column="liked" />
             <result property="latitude" column="latitude" />
@@ -59,6 +61,7 @@
                 s.store_name,
                 s.store_category_code,
                 s.description,
+                s.thumbnail_url,
                 MAX(CASE WHEN sl.user_code = #{userCode} THEN 1 ELSE 0 END) AS liked,
                 l.address,
                 i.image_code,
@@ -136,6 +139,7 @@
                     detail_address,
                     description,
                     store_breaktime_hours,
+                    thumbnail_url,
                     user_code
                 )
             VALUES
@@ -151,6 +155,7 @@
                 #{storeCreateDTO.detailAddress},
                 #{storeCreateDTO.description},
                 #{storeCreateDTO.storeBreaktimeHours},
+                #{storeCreateDTO.thumbnailUrl},
                 #{storeCreateDTO.userCode}::uuid
             )
         </insert>
@@ -198,6 +203,7 @@
             s.detail_address,
             s.description,
             s.store_breaktime_hours,
+            s.thumbnail_url,
             (
             SELECT
                 COUNT(like_code)
@@ -258,6 +264,7 @@
             detail_address = #{updateDTO.detailAddress},
             description = #{updateDTO.description},
             store_breaktime_hours = #{updateDTO.storeBreaktimeHours},
+            thumbnail_url = #{updateDTO.thumbnailUrl},
             user_code = #{updateDTO.userCode}::uuid
     </update>
 

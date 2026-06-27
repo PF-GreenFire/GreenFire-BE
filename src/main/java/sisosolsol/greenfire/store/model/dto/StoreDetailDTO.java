@@ -28,6 +28,7 @@ public class StoreDetailDTO {
     private StoreFoodType storeFoodType;
     private String description;
     private String storeBreaktimeHours;
+    private String thumbnailUrl;
     private int likeCount;
     private boolean liked;
     private double latitude;

@@ -17,6 +17,7 @@ public class StoreListDTO {
     private boolean liked;
     private String address;
     private int imageCode;
+    private String thumbnailUrl;
     private double latitude;
     private double longitude;
 }
