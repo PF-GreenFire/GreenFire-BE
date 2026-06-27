@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sisosolsol.greenfire.scrap.model.dao.ScrapMapper">
+
+    <insert id="insertScrap">
+        INSERT INTO scrap (user_code, target_type, target_code)
+        VALUES (#{userCode}, #{scrap.targetType}, #{scrap.targetCode})
+        ON CONFLICT (user_code, target_type, target_code) DO NOTHING
+    </insert>
+
+    <delete id="deleteScrap">
+        DELETE FROM scrap
+        WHERE scrap_code = #{scrapCode}
+          AND user_code = #{userCode}
+    </delete>
+
+    <!-- 스토어 스크랩 — 본 테이블 join 으로 표시용 데이터 함께 반환 -->
+    <select id="findStoreScraps" resultType="sisosolsol.greenfire.scrap.model.dto.ScrapStoreDTO">
+        SELECT
+            sc.scrap_code      AS scrapCode,
+            s.store_code       AS storeCode,
+            s.store_name       AS storeName,
+            l.address          AS address,
+            s.thumbnail_url    AS thumbnailUrl,
+            sc.created_at      AS createdAt
+        FROM scrap sc
+        JOIN store s ON s.store_code = CAST(sc.target_code AS INTEGER)
+        LEFT JOIN location l ON l.location_code = s.location_code
+        WHERE sc.user_code = #{userCode}
+          AND sc.target_type = 'STORE'
+          AND s.store_status &lt;&gt; 'DELETED'
+        ORDER BY sc.created_at DESC
+    </select>
+
+    <!-- 피드(게시글) 스크랩 -->
+    <select id="findFeedScraps" resultType="sisosolsol.greenfire.scrap.model.dto.ScrapFeedDTO">
+        SELECT
+            sc.scrap_code      AS scrapCode,
+            p.post_code        AS postCode,
+            p.post_content     AS postContent,
+            p.thumbnail        AS thumbnail,
+            u.nickname         AS nickname,
+            sc.created_at      AS createdAt
+        FROM scrap sc
+        JOIN post p ON p.post_code = CAST(sc.target_code AS INTEGER)
+        LEFT JOIN users u ON u.user_code = p.user_code
+        WHERE sc.user_code = #{userCode}
+          AND sc.target_type = 'POST'
+          AND p.post_status = 'ACTIVE'
+        ORDER BY sc.created_at DESC
+    </select>
+
+</mapper>

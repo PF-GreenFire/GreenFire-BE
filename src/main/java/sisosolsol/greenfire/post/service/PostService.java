@@ -21,7 +21,9 @@ import sisosolsol.greenfire.post.model.dto.PostDTO;
 import sisosolsol.greenfire.post.model.dto.PostUpdateDTO;
 import sisosolsol.greenfire.post.model.dto.SimplePostDTO;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -91,5 +93,41 @@ public class PostService {
     private boolean hasPermission(Integer postCode, AuthUser user) {
         PostDTO targetPost = getPost(postCode);
         return targetPost.getUserCode().equals(user.userId()) || user.role().equals(UserRole.ADMIN.name());
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getMyPosts(UUID userCode, int page, int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        int offset = (safePage - 1) * safeSize;
+
+        List<SimplePostDTO> posts = postMapper.findPostsByUserCode(userCode, offset, safeSize);
+        int totalCount = postMapper.countPostsByUserCode(userCode);
+
+        return buildPageResponse(posts, totalCount, safePage, safeSize);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getMyLikedPosts(UUID userCode, int page, int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        int offset = (safePage - 1) * safeSize;
+
+        List<SimplePostDTO> posts = postMapper.findLikedPostsByUserCode(userCode, offset, safeSize);
+        int totalCount = postMapper.countLikedPostsByUserCode(userCode);
+
+        return buildPageResponse(posts, totalCount, safePage, safeSize);
+    }
+
+    private Map<String, Object> buildPageResponse(List<SimplePostDTO> posts,
+                                                  int totalCount,
+                                                  int page,
+                                                  int size) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("posts", posts);
+        result.put("totalCount", totalCount);
+        result.put("currentPage", page);
+        result.put("hasMore", page * size < totalCount);
+        return result;
     }
 }

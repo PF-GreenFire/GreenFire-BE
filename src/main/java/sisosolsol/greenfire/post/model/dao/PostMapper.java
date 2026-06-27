@@ -22,4 +22,18 @@ public interface PostMapper {
     void updatePost(@Param("postCode") Integer postCode, @Param("post") PostUpdateDTO post);
 
     void deletePost(Integer postCode);
+
+    // 내가 작성한 게시글 페이징 조회
+    List<SimplePostDTO> findPostsByUserCode(@Param("userCode") UUID userCode,
+                                            @Param("offset") int offset,
+                                            @Param("limit") int limit);
+
+    int countPostsByUserCode(@Param("userCode") UUID userCode);
+
+    // 내가 좋아요한 게시글 페이징 조회
+    List<SimplePostDTO> findLikedPostsByUserCode(@Param("userCode") UUID userCode,
+                                                 @Param("offset") int offset,
+                                                 @Param("limit") int limit);
+
+    int countLikedPostsByUserCode(@Param("userCode") UUID userCode);
 }

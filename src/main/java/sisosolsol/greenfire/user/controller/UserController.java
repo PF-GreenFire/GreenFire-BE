@@ -19,11 +19,19 @@ import sisosolsol.greenfire.auth.dto.DeleteAccountRequest;
 import sisosolsol.greenfire.auth.service.AuthService;
 import sisosolsol.greenfire.common.config.UploadAllowConfig;
 import sisosolsol.greenfire.common.security.model.AuthUser;
+import sisosolsol.greenfire.post.service.PostService;
+import sisosolsol.greenfire.scrap.model.dto.ScrapCreateDTO;
+import sisosolsol.greenfire.scrap.model.dto.ScrapFeedDTO;
+import sisosolsol.greenfire.scrap.model.dto.ScrapStoreDTO;
+import sisosolsol.greenfire.scrap.service.ScrapService;
 import sisosolsol.greenfire.user.dto.PasswordChangeRequest;
 import sisosolsol.greenfire.user.dto.UpdateCoverImageDTO;
 import sisosolsol.greenfire.user.dto.User;
 import sisosolsol.greenfire.user.dto.UpdateUserDTO;
 import sisosolsol.greenfire.user.service.UserService;
+
+import java.util.List;
+import java.util.Map;
 
 @Tag(name = "사용자", description = "사용자 프로필, 스크랩, 팔로우 API")
 @RestController
@@ -34,6 +42,8 @@ public class UserController {
     private final UploadAllowConfig uploadAllowConfig;
     private final UserService userService;
     private final AuthService authService;
+    private final ScrapService scrapService;
+    private final PostService postService;
 
     /** 다른 사용자 공개 프로필. viewer 비로그인 OK (isFollowing=false) */
     @Operation(summary = "다른 사용자 공개 프로필 조회")
@@ -183,6 +193,60 @@ public class UserController {
         if (loginUser == null) return ResponseEntity.status(401).build();
         String coverStorageKey = userService.changeCoverImage(loginUser.userId(), request, file);
         return ResponseEntity.ok(coverStorageKey);
+    }
+
+    // ─ 스크랩 ─────────────────────────────────────────────
+
+    @Operation(summary = "스크랩 추가")
+    @PostMapping("/scraps")
+    public ResponseEntity<Void> addScrap(@AuthenticationPrincipal AuthUser loginUser,
+                                         @Valid @RequestBody ScrapCreateDTO scrap) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
+        scrapService.addScrap(loginUser.userId(), scrap);
+        return ResponseEntity.status(201).build();
+    }
+
+    @Operation(summary = "스크랩 삭제")
+    @DeleteMapping("/scraps/{scrapCode}")
+    public ResponseEntity<Void> deleteScrap(@AuthenticationPrincipal AuthUser loginUser,
+                                            @PathVariable("scrapCode") Integer scrapCode) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
+        scrapService.deleteScrap(loginUser.userId(), scrapCode);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "내가 스크랩한 가게 목록")
+    @GetMapping("/scraps/stores")
+    public ResponseEntity<List<ScrapStoreDTO>> getScrapStores(@AuthenticationPrincipal AuthUser loginUser) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
+        return ResponseEntity.ok(scrapService.getStoreScraps(loginUser.userId()));
+    }
+
+    @Operation(summary = "내가 스크랩한 피드 목록")
+    @GetMapping("/scraps/feeds")
+    public ResponseEntity<List<ScrapFeedDTO>> getScrapFeeds(@AuthenticationPrincipal AuthUser loginUser) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
+        return ResponseEntity.ok(scrapService.getFeedScraps(loginUser.userId()));
+    }
+
+    // ─ 내 게시글 / 좋아요한 게시글 ───────────────────────
+
+    @Operation(summary = "내가 작성한 게시글 페이징 조회")
+    @GetMapping("/me/posts")
+    public ResponseEntity<Map<String, Object>> getMyPosts(@AuthenticationPrincipal AuthUser loginUser,
+                                                          @RequestParam(defaultValue = "1") int page,
+                                                          @RequestParam(defaultValue = "10") int size) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
+        return ResponseEntity.ok(postService.getMyPosts(loginUser.userId(), page, size));
+    }
+
+    @Operation(summary = "내가 좋아요한 게시글 페이징 조회")
+    @GetMapping("/me/liked-posts")
+    public ResponseEntity<Map<String, Object>> getMyLikedPosts(@AuthenticationPrincipal AuthUser loginUser,
+                                                               @RequestParam(defaultValue = "1") int page,
+                                                               @RequestParam(defaultValue = "10") int size) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
+        return ResponseEntity.ok(postService.getMyLikedPosts(loginUser.userId(), page, size));
     }
 
 }

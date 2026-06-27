@@ -111,4 +111,54 @@
         WHERE
             post_code = #{postCode}
     </update>
+
+    <!-- 내가 작성한 게시글 페이징 조회 (활성 글만) -->
+    <select id="findPostsByUserCode" resultType="sisosolsol.greenfire.post.model.dto.SimplePostDTO">
+        SELECT
+            p.post_code   AS postCode,
+            p.user_code   AS userCode,
+            u.name        AS writer,
+            p.created_at  AS createdAt,
+            p.thumbnail   AS thumbnail,
+            p.post_type   AS postType
+        FROM post p
+        JOIN users u ON u.user_code = p.user_code
+        WHERE p.user_code = #{userCode}
+          AND p.post_status = 'ACTIVE'
+        ORDER BY p.created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countPostsByUserCode" resultType="int">
+        SELECT COUNT(*)
+        FROM post
+        WHERE user_code = #{userCode}
+          AND post_status = 'ACTIVE'
+    </select>
+
+    <!-- 내가 좋아요한 게시글 페이징 조회 -->
+    <select id="findLikedPostsByUserCode" resultType="sisosolsol.greenfire.post.model.dto.SimplePostDTO">
+        SELECT
+            p.post_code   AS postCode,
+            p.user_code   AS userCode,
+            u.name        AS writer,
+            p.created_at  AS createdAt,
+            p.thumbnail   AS thumbnail,
+            p.post_type   AS postType
+        FROM post p
+        JOIN post_like pl ON pl.post_code = p.post_code
+        JOIN users u ON u.user_code = p.user_code
+        WHERE pl.user_code = #{userCode}
+          AND p.post_status = 'ACTIVE'
+        ORDER BY pl.created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countLikedPostsByUserCode" resultType="int">
+        SELECT COUNT(*)
+        FROM post p
+        JOIN post_like pl ON pl.post_code = p.post_code
+        WHERE pl.user_code = #{userCode}
+          AND p.post_status = 'ACTIVE'
+    </select>
 </mapper>
