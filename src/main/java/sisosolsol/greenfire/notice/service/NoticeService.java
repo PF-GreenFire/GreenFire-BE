@@ -26,6 +26,8 @@ import sisosolsol.greenfire.notice.enums.NoticeCategory;
 import sisosolsol.greenfire.notice.enums.NoticeStatus;
 import sisosolsol.greenfire.notice.repository.NoticeRepository;
 import sisosolsol.greenfire.notice.repository.NoticeViewRepository;
+import sisosolsol.greenfire.user.entity.UserAccount;
+import sisosolsol.greenfire.user.repository.UserAccountRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,10 +39,22 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class NoticeService {
 
+    private static final String DEFAULT_AUTHOR_NAME = "관리자";
+
     private final NoticeRepository noticeRepository;
     private final NoticeViewRepository noticeViewRepository;
     private final ImageService imageService;
     private final ActivityLogService activityLogService;
+    private final UserAccountRepository userAccountRepository;
+
+    private String resolveAuthorName(UUID authorUserCode) {
+        if (authorUserCode == null) {
+            return DEFAULT_AUTHOR_NAME;
+        }
+        return userAccountRepository.findById(authorUserCode)
+                .map(UserAccount::getNickname)
+                .orElse(DEFAULT_AUTHOR_NAME);
+    }
 
     /**
      * 공지사항 목록 조회 (페이징, 필터링, 검색)
@@ -102,8 +116,7 @@ public class NoticeService {
                 PageRequest.of(0, 1)
         ).stream().findFirst().orElse(null);
 
-        // TODO: authorName은 User 엔티티에서 가져와야 함 (현재는 임시)
-        String authorName = "관리자";
+        String authorName = resolveAuthorName(notice.getAuthorUserCode());
 
         return NoticeDetailResponse.from(notice, authorName, isViewed, images, prevNotice, nextNotice);
     }
@@ -183,7 +196,7 @@ public class NoticeService {
         // ⭐ 이미지 조회
         List<ImageDTO> images = imageService.getImages(ImageType.NOTICE, notice.getNoticeCode());
 
-        String authorName = "관리자";
+        String authorName = resolveAuthorName(notice.getAuthorUserCode());
         return NoticeDetailResponse.from(notice, authorName, false, images, null, null);
     }
 
