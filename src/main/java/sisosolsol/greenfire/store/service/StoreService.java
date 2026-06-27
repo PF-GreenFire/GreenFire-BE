@@ -1,9 +1,15 @@
 package sisosolsol.greenfire.store.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sisosolsol.greenfire.common.enums.image.ImageType;
+import sisosolsol.greenfire.common.exception.BadRequestException;
+import sisosolsol.greenfire.common.exception.CustomException;
+import sisosolsol.greenfire.common.exception.type.ExceptionCode;
 import sisosolsol.greenfire.common.page.Pagination;
 import sisosolsol.greenfire.common.page.SelectCriteria;
 import sisosolsol.greenfire.image.model.dto.ImageUploadDTO;
@@ -20,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StoreService {
@@ -57,10 +64,18 @@ public class StoreService {
     public int registApplyStore(StoreCreateDTO storeCreateDTO) {
         int locationCode = processLocation(storeCreateDTO.getLocation()); // 지역 코드 중복 조회 후 없다면 등록
 
-        storeMapper.registApplyStore(storeCreateDTO, locationCode); // 장소 신청 등록
+        try {
+            storeMapper.registApplyStore(storeCreateDTO, locationCode); // 장소 신청 등록
+        } catch (DataIntegrityViolationException e) {
+            throw new BadRequestException(ExceptionCode.InvalidForeignKeyException);
+        } catch (DataAccessException e) {
+            log.error("장소 신청 등록 실패 (userCode={}, locationCode={})",
+                    storeCreateDTO.getUserCode(), locationCode, e);
+            throw new CustomException(ExceptionCode.DATABASE_ACCESS_ERROR);
+        }
 
-        if (storeCreateDTO.getImages() != null) { // 이미지 파일 있을때 만 이미지 등록 TODO: fileName incoding 적용 예정 [현재 fileName 제외 등록]
-            processImages(storeCreateDTO.getStoreCode(), storeCreateDTO.getImages()); // 이미지 파일 삭제 후 등록
+        if (storeCreateDTO.getImages() != null) { // TODO: fileName 인코딩 정책 결정 후 적용
+            processImages(storeCreateDTO.getStoreCode(), storeCreateDTO.getImages());
         }
 
         return storeCreateDTO.getStoreCode();
@@ -93,10 +108,18 @@ public class StoreService {
     public void updateStore(int storeCode, StoreCreateDTO updateDTO) {
         int locationCode = processLocation(updateDTO.getLocation()); // 지역 코드 중복 조회 후 없다면 등록
 
-        storeMapper.updateStore(storeCode, updateDTO, locationCode); // 장소 정보 수정
+        try {
+            storeMapper.updateStore(storeCode, updateDTO, locationCode);
+        } catch (DataIntegrityViolationException e) {
+            throw new BadRequestException(ExceptionCode.InvalidForeignKeyException);
+        } catch (DataAccessException e) {
+            log.error("장소 정보 수정 실패 (storeCode={}, locationCode={})",
+                    storeCode, locationCode, e);
+            throw new CustomException(ExceptionCode.DATABASE_ACCESS_ERROR);
+        }
 
-        if (updateDTO.getImages() != null) { // 이미지 파일 있을때 만 이미지 등록 TODO: fileName incoding 적용 예정 [현재 fileName 제외 등록]
-            processImages(storeCode, updateDTO.getImages()); // 이미지 파일 삭제 후 등록
+        if (updateDTO.getImages() != null) { // TODO: fileName 인코딩 정책 결정 후 적용
+            processImages(storeCode, updateDTO.getImages());
         }
     }
 
