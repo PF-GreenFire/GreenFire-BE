@@ -46,4 +46,12 @@ public interface UserMapper {
     sisosolsol.greenfire.user.dto.PublicProfileRow findPublicProfile(
             @Param("targetCode") UUID targetCode,
             @Param("viewerCode") UUID viewerCode);
+
+    int countFollowers(@Param("userCode") UUID userCode);
+
+    int countFollowings(@Param("userCode") UUID userCode);
+
+    List<ChallengeDTO> findMyChallenges(@Param("userCode") UUID userCode,
+                                        @Param("offset") int offset,
+                                        @Param("limit") int limit);
 }

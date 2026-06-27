@@ -209,4 +209,36 @@
         FROM users u
         WHERE u.user_code = #{targetCode}::uuid
     </select>
+
+    <!-- 나를 팔로우 한 사람 수 -->
+    <select id="countFollowers" resultType="int">
+        SELECT COUNT(*) FROM user_follows WHERE target_user = #{userCode}
+    </select>
+
+    <!-- 내가 팔로우 한 사람 수 -->
+    <select id="countFollowings" resultType="int">
+        SELECT COUNT(*) FROM user_follows WHERE user_code = #{userCode}
+    </select>
+
+    <!-- 내가 참여한 챌린지 페이징 조회 -->
+    <select id="findMyChallenges" resultType="sisosolsol.greenfire.challenge.model.dto.ChallengeDTO">
+        SELECT
+            ch.challenge_code        AS challengeCode,
+            ch.created_at            AS createdAt,
+            ch.challenge_title       AS challengeTitle,
+            ch.challenge_content     AS challengeContent,
+            ch.host_user             AS hostUser,
+            ch.recruitment_num       AS recruitmentNum,
+            ch.start_date            AS startDate,
+            ch.end_date              AS endDate,
+            ch.xp                    AS xp,
+            ch.thumbnail_url         AS thumbnailUrl,
+            ch.challenge_category_code AS challengeCategoryCode,
+            ch.challenge_status      AS challengeStatus
+        FROM challenge_part cp
+        JOIN challenge ch ON cp.challenge_code = ch.challenge_code
+        WHERE cp.user_code = #{userCode}
+        ORDER BY ch.created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
 </mapper>

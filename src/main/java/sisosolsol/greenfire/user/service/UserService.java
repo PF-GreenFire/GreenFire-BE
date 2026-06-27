@@ -47,6 +47,7 @@ public class UserService {
     private final UserMapper userMapper;
     private final sisosolsol.greenfire.badge.service.BadgeService badgeService;
     private final sisosolsol.greenfire.notification.service.NotificationService notificationService;
+    private final sisosolsol.greenfire.post.model.dao.PostMapper postMapper;
 
     public User getUserProfile(UUID userCode) {
 //        try {
@@ -108,6 +109,23 @@ public class UserService {
         return null;
     }
 
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Object> getMyChallenges(UUID userCode, int page, int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        int offset = (safePage - 1) * safeSize;
+
+        List<ChallengeDTO> challenges = userMapper.findMyChallenges(userCode, offset, safeSize);
+        int totalCount = userMapper.countParticipatingChallenge(userCode);
+
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("challenges", challenges);
+        result.put("totalCount", totalCount);
+        result.put("currentPage", safePage);
+        result.put("hasMore", safePage * safeSize < totalCount);
+        return result;
+    }
+
     public UserProfileDTO getUserSummaryData(UUID userCode) {
         ScrapbookSummaryDTO scrapbookSummary = userMapper.getScrapbookSummary(userCode);
 
@@ -120,10 +138,14 @@ public class UserService {
                                                                 .build();
 
 
+        int postCount = postMapper.countPostsByUserCode(userCode);
+        int followers = userMapper.countFollowers(userCode);
+        int followings = userMapper.countFollowings(userCode);
+
         EchoMemorySummaryDTO echoMemorySummary = EchoMemorySummaryDTO.builder()
-                                                                .postCount(0)
-                                                                .followers(0)
-                                                                .followings(0)
+                                                                .postCount(postCount)
+                                                                .followers(followers)
+                                                                .followings(followings)
                                                                 .build();
 
         User user = userMapper.findUserSummary(userCode);

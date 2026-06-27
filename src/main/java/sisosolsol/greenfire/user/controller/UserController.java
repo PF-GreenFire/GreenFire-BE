@@ -249,4 +249,13 @@ public class UserController {
         return ResponseEntity.ok(postService.getMyLikedPosts(loginUser.userId(), page, size));
     }
 
+    @Operation(summary = "내가 참여한 챌린지 페이징 조회")
+    @GetMapping("/me/challenges")
+    public ResponseEntity<Map<String, Object>> getMyChallenges(@AuthenticationPrincipal AuthUser loginUser,
+                                                               @RequestParam(defaultValue = "1") int page,
+                                                               @RequestParam(defaultValue = "10") int size) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
+        return ResponseEntity.ok(userService.getMyChallenges(loginUser.userId(), page, size));
+    }
+
 }
