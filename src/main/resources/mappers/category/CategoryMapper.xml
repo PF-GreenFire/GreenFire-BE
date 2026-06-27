@@ -78,4 +78,24 @@
         WHERE
             store_category_code = #{categoryCode}
     </update>
+
+    <select id="countActiveChallengesByCategoryCode" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            challenge
+        WHERE
+            challenge_category_code = #{categoryCode}
+            AND challenge_status &lt;&gt; 'DELETED'
+    </select>
+
+    <select id="countActiveStoresByCategoryCode" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            store
+        WHERE
+            store_category_code = #{categoryCode}
+            AND store_status &lt;&gt; 'DELETED'
+    </select>
 </mapper>

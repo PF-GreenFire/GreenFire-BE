@@ -8,6 +8,8 @@ import sisosolsol.greenfire.category.model.dto.CategoryCreateDTO;
 import sisosolsol.greenfire.category.model.dto.CategoryDTO;
 import sisosolsol.greenfire.category.model.dto.CategoryUpdateDTO;
 import sisosolsol.greenfire.common.enums.category.CategoryType;
+import sisosolsol.greenfire.common.exception.CustomException;
+import sisosolsol.greenfire.common.exception.type.ExceptionCode;
 
 import java.util.List;
 
@@ -54,13 +56,18 @@ public class CategoryService {
     }
 
     public void deleteCategory(Integer categoryCode, CategoryType categoryType) {
-        // TODO: 각 카테고리에 등록된 챌린지/스토어가 없을 때에만 삭제 허용
         int result = 0;
         switch (categoryType) {
             case CHALLENGE:
+                if (categoryMapper.countActiveChallengesByCategoryCode(categoryCode) > 0) {
+                    throw new CustomException(ExceptionCode.CATEGORY_IN_USE);
+                }
                 result = categoryMapper.deleteChallengeCategory(categoryCode);
                 break;
             case STORE:
+                if (categoryMapper.countActiveStoresByCategoryCode(categoryCode) > 0) {
+                    throw new CustomException(ExceptionCode.CATEGORY_IN_USE);
+                }
                 result = categoryMapper.deleteStoreCategory(categoryCode);
                 break;
         }

@@ -25,4 +25,8 @@ public interface CategoryMapper {
     int deleteChallengeCategory(Integer categoryCode);
 
     int deleteStoreCategory(Integer categoryCode);
+
+    int countActiveChallengesByCategoryCode(Integer categoryCode);
+
+    int countActiveStoresByCategoryCode(Integer categoryCode);
 }

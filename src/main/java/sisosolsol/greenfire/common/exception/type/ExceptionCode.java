@@ -42,6 +42,7 @@ public enum ExceptionCode {
     CHALLENGE_ALREADY_CANCELLED(409, "이미 취소된 챌린지입니다."),
     CHALLENGE_PAUSED(409, "일시중지된 챌린지입니다."),
     CHALLENGE_CANCEL_FAILED(409, "챌린지 취소에 실패했습니다."),
+    CATEGORY_IN_USE(409, "사용 중인 카테고리는 삭제할 수 없습니다."),
 
 
     // 400 BAD REQUEST
