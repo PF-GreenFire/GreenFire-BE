@@ -1,12 +1,14 @@
 package sisosolsol.greenfire.feed.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import sisosolsol.greenfire.common.security.model.AuthUser;
-import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
+import sisosolsol.greenfire.common.security.model.AuthUser;
 import sisosolsol.greenfire.feed.model.dto.CommentDTO;
 import sisosolsol.greenfire.feed.model.dto.CommentRequest;
 import sisosolsol.greenfire.feed.model.dto.FeedCreateRequest;
@@ -20,6 +22,7 @@ import java.net.URI;
 
 import java.util.List;
 
+@Tag(name = "피드", description = "피드 등록/조회, 댓글, 좋아요 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/feed")
@@ -28,6 +31,7 @@ public class FeedController {
     private final FeedService feedService;
 
     // 피드 목록 (cursor 기반 무한스크롤)
+    @Operation(summary = "피드 목록 조회 (cursor 기반 무한스크롤)")
     @GetMapping
     public ResponseEntity<FeedListResponse> getFeedList(
             @RequestParam(required = false) String type,
@@ -42,6 +46,7 @@ public class FeedController {
     }
 
     // 피드 등록 (multipart: data + images)
+    @Operation(summary = "피드 등록 (멀티파트: 데이터 + 이미지)")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> createFeedPost(
             @RequestPart("data") FeedCreateRequest request,
@@ -55,6 +60,7 @@ public class FeedController {
     }
 
     // 추천 피드
+    @Operation(summary = "추천 피드 조회")
     @GetMapping("/featured")
     public ResponseEntity<List<FeedListItemDTO>> getFeatured(
             @RequestParam(defaultValue = "5") int limit,
@@ -65,6 +71,7 @@ public class FeedController {
     }
 
     // 피드 상세 조회 (좋아요 여부 포함을 위해 인증 정보 사용)
+    @Operation(summary = "피드 상세 조회")
     @GetMapping("/{postCode}")
     public ResponseEntity<FeedDetailDTO> getFeedDetail(@PathVariable Integer postCode,
                                                        @AuthenticationPrincipal AuthUser user) {
@@ -76,6 +83,7 @@ public class FeedController {
     }
 
     // 좋아요 토글
+    @Operation(summary = "피드 좋아요 토글")
     @PostMapping("/{postCode}/like")
     public ResponseEntity<LikeToggleResponse> toggleLike(@PathVariable Integer postCode,
                                                          @AuthenticationPrincipal AuthUser user) {
@@ -86,12 +94,14 @@ public class FeedController {
     }
 
     // 댓글 목록
+    @Operation(summary = "피드 댓글 목록 조회")
     @GetMapping("/{postCode}/comments")
     public ResponseEntity<List<CommentDTO>> getComments(@PathVariable Integer postCode) {
         return ResponseEntity.ok(feedService.getComments(postCode));
     }
 
     // 댓글 등록
+    @Operation(summary = "피드 댓글 등록")
     @PostMapping("/{postCode}/comments")
     public ResponseEntity<CommentDTO> addComment(@PathVariable Integer postCode,
                                                  @RequestBody CommentRequest request,
@@ -107,6 +117,7 @@ public class FeedController {
     }
 
     // 댓글 삭제 (본인 댓글만)
+    @Operation(summary = "피드 댓글 삭제 (본인 댓글만)")
     @DeleteMapping("/comments/{commentCode}")
     public ResponseEntity<Void> deleteComment(@PathVariable Integer commentCode,
                                               @AuthenticationPrincipal AuthUser user) {

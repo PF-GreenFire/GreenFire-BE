@@ -1,5 +1,7 @@
 package sisosolsol.greenfire.report.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,7 @@ import sisosolsol.greenfire.report.service.ReportService;
 
 import java.util.Map;
 
+@Tag(name = "신고", description = "신고 접수 및 관리자 처리 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
@@ -27,6 +30,7 @@ public class ReportController {
      * 신고 접수
      * POST /api/reports
      */
+    @Operation(summary = "신고 접수")
     @PostMapping("/reports")
     public ResponseEntity<Map<String, Object>> createReport(
             @Valid @RequestBody ReportCreateRequest request,
@@ -48,6 +52,7 @@ public class ReportController {
      * 신고 목록 조회 (관리자)
      * GET /api/admin/reports?page=1&size=20&status=PENDING
      */
+    @Operation(summary = "신고 목록 조회 (관리자)")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/reports")
     public ResponseEntity<ReportPageResponse> getReports(
@@ -63,6 +68,7 @@ public class ReportController {
      * 신고 처리 (관리자)
      * PATCH /api/admin/reports/{id}/handle
      */
+    @Operation(summary = "신고 처리 (관리자)")
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/admin/reports/{id}/handle")
     public ResponseEntity<Map<String, Object>> handleReport(
@@ -84,6 +90,7 @@ public class ReportController {
      * 대기 중인 신고 건수 (관리자 대시보드용)
      * GET /api/admin/reports/pending-count
      */
+    @Operation(summary = "대기 중인 신고 건수 조회 (관리자 대시보드용)")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/reports/pending-count")
     public ResponseEntity<Map<String, Object>> getPendingReportCount() {

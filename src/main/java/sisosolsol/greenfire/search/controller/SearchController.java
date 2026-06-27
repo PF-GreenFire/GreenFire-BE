@@ -1,5 +1,7 @@
 package sisosolsol.greenfire.search.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +12,7 @@ import sisosolsol.greenfire.search.dto.SearchResponse;
 import sisosolsol.greenfire.search.model.SearchType;
 import sisosolsol.greenfire.search.service.SearchService;
 
+@Tag(name = "통합 검색", description = "도메인별 통합 검색 API")
 @RestController
 @RequestMapping("/api/search")
 @RequiredArgsConstructor
@@ -22,6 +25,7 @@ public class SearchController {
      *
      * 예: GET /api/search?q=초록&type=POST&size=20
      */
+    @Operation(summary = "통합 검색 (type별 또는 전체 도메인)")
     @GetMapping
     public ResponseEntity<SearchResponse> search(
             @RequestParam("q") String q,

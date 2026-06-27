@@ -1,5 +1,7 @@
 package sisosolsol.greenfire.location.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -22,6 +24,7 @@ import sisosolsol.greenfire.store.model.dto.StoreDetailDTO;
 import sisosolsol.greenfire.store.model.dto.StoreListDTO;
 import sisosolsol.greenfire.store.service.StoreService;
 
+@Tag(name = "초록불 장소", description = "초록불 장소(지도) 조회, 이미지, 찜 API")
 @RestController
 @RequestMapping("/location")
 @RequiredArgsConstructor
@@ -30,6 +33,7 @@ public class LocationController {
     private final StoreService storeService;
     private final UploadAllowConfig uploadAllowConfig;
 
+    @Operation(summary = "장소 카테고리 목록 조회")
     @GetMapping("/categories")
     public ResponseEntity getStoreCategories() {
 
@@ -37,6 +41,7 @@ public class LocationController {
     }
 
     // 초록불 메인 장소 목록 조회 TODO: 현재 위치 정보를 기반으로 반경 지도 목록을 보여주는 것으로 수정 예정, 썸네일이 필요할것 같은 예감인데 order값 1인 것으로 할지 썸네일 만들지 추후 협의 및 적용 예정
+    @Operation(summary = "초록불 메인 장소 목록 조회")
     @GetMapping
     public ResponseEntity<List<StoreListDTO>> getStoreList(@AuthenticationPrincipal AuthUser user) {
         UUID userId = user != null ? user.userId() : null;
@@ -44,6 +49,7 @@ public class LocationController {
         return ResponseEntity.ok(stores);
     }
 
+    @Operation(summary = "장소 이미지 조회")
     @GetMapping("/store-image/{imageCode}")
     public ResponseEntity<Resource> getStoreImage(@PathVariable("imageCode") int imageCode) {
         String storedKey = storeService.findImagePathByImageCode(imageCode);
@@ -61,6 +67,7 @@ public class LocationController {
     }
 
     // 장소 상세 정보 조회
+    @Operation(summary = "장소 상세 정보 조회")
     @GetMapping("/stores/{storeCode}")
     public ResponseEntity<StoreDetailDTO> getStoreDetail (@PathVariable("storeCode") Integer storeCode, @AuthenticationPrincipal AuthUser user) {
         UUID userId = user != null ? user.userId() : null;
@@ -68,6 +75,7 @@ public class LocationController {
         return ResponseEntity.ok(storeDetail);
     }
 
+    @Operation(summary = "장소 찜 등록")
     @PostMapping("/stores/{storeCode}/like")
     public ResponseEntity<Void> storeLike(@PathVariable("storeCode") int storeCode, @AuthenticationPrincipal AuthUser user) {
         if (user == null) {
@@ -77,6 +85,7 @@ public class LocationController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "장소 찜 취소")
     @DeleteMapping("/stores/{storeCode}/like")
     public ResponseEntity<Void> deleteStoreLike(@PathVariable("storeCode") int storeCode, @AuthenticationPrincipal AuthUser user) {
         if (user == null) {

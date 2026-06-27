@@ -1,5 +1,7 @@
 package sisosolsol.greenfire.notice.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Tag(name = "공지사항", description = "공지사항 조회/관리 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/notices")
@@ -32,6 +35,7 @@ public class NoticeController {
      * 공지사항 목록 조회
      * GET /api/notices?page=1&limit=20&category=NOTICE&searchKeyword=검색어
      */
+    @Operation(summary = "공지사항 목록 조회")
     @GetMapping
     public ResponseEntity<NoticePageResponse> getNoticeList(
             @RequestParam(defaultValue = "1") Integer page,
@@ -49,6 +53,7 @@ public class NoticeController {
      * 공지사항 상세 조회
      * GET /api/notices/{noticeCode}?userCode=UUID
      */
+    @Operation(summary = "공지사항 상세 조회")
     @GetMapping("/{noticeCode}")
     public ResponseEntity<NoticeDetailResponse> getNoticeDetail(
             @PathVariable Integer noticeCode,
@@ -64,6 +69,7 @@ public class NoticeController {
      * - 로그인 사용자: userCode 기반 중복 방지
      * - 비로그인 사용자: IP 기반 중복 방지
      */
+    @Operation(summary = "공지사항 조회수 증가")
     @PostMapping("/{noticeCode}/view")
     public ResponseEntity<Map<String, Object>> incrementViewCount(
             @PathVariable Integer noticeCode,
@@ -110,6 +116,7 @@ public class NoticeController {
      * 관련 공지사항 조회
      * GET /api/notices/{noticeCode}/related?limit=5
      */
+    @Operation(summary = "관련 공지사항 조회")
     @GetMapping("/{noticeCode}/related")
     public ResponseEntity<List<NoticeListResponse>> getRelatedNotices(
             @PathVariable Integer noticeCode,
@@ -123,6 +130,7 @@ public class NoticeController {
      * 최신 중요 공지사항 조회 (미리보기용)
      * GET /api/notices/latest-important
      */
+    @Operation(summary = "최신 중요 공지사항 조회 (미리보기용)")
     @GetMapping("/latest-important")
     public ResponseEntity<NoticeDetailResponse> getLatestImportantNotice() {
         NoticeDetailResponse response = noticeService.getLatestImportantNotice();
@@ -133,6 +141,7 @@ public class NoticeController {
      * 공지사항 생성 (관리자)
      * POST /api/notices
      */
+    @Operation(summary = "공지사항 생성 (관리자)")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> createNotice(
@@ -156,6 +165,7 @@ public class NoticeController {
      * 공지사항 수정 (관리자)
      * PUT /api/notices/{noticeCode}
      */
+    @Operation(summary = "공지사항 수정 (관리자)")
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/{noticeCode}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> updateNotice(
@@ -179,6 +189,7 @@ public class NoticeController {
      * 공지사항 삭제 (관리자)
      * DELETE /api/notices/{noticeCode}
      */
+    @Operation(summary = "공지사항 삭제 (관리자)")
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{noticeCode}")
     public ResponseEntity<Map<String, Object>> deleteNotice(
