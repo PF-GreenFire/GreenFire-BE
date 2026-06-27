@@ -1,6 +1,7 @@
 package sisosolsol.greenfire.post.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import sisosolsol.greenfire.post.model.dto.SimplePostDTO;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -47,17 +49,15 @@ public class PostService {
 
         try {
             postMapper.registChallengePost(post, userId);
+        } catch (DataIntegrityViolationException e) {
+            throw new BadRequestException(ExceptionCode.InvalidForeignKeyException);
         } catch (DataAccessException e) {
-            if (e instanceof DataIntegrityViolationException) {
-                throw new BadRequestException(ExceptionCode.InvalidForeignKeyException);
-            } else {
-                System.out.println("에러 발생" + e.getMessage());
-            }
+            log.error("챌린지 게시글 등록 실패 (userId={}, challengeCode={})",
+                    userId, post.getChallengeCode(), e);
+            throw new CustomException(ExceptionCode.DATABASE_ACCESS_ERROR);
         }
 
-        for (ImageUploadDTO image : post.getImages()) {
-            imageService.saveImage(ImageType.POST, post.getPostCode(), image);
-        }
+        savePostImages(post.getPostCode(), post.getImages());
         return post.getPostCode();
     }
 
@@ -66,11 +66,18 @@ public class PostService {
             throw new CustomException(ExceptionCode.ACCESS_DENIED);
 
         postMapper.updatePost(postCode, post);
+        replacePostImages(postCode, post.getImages());
+    }
 
-        //TODO: 추후 리팩토링
+    private void replacePostImages(Integer postCode, List<ImageUploadDTO> images) {
         imageService.deleteAllInPost(postCode);
-        for (ImageUploadDTO image : post.getImages()) {
-            imageService.saveImage(ImageType.POST, post.getPostCode(), image);
+        savePostImages(postCode, images);
+    }
+
+    private void savePostImages(Integer postCode, List<ImageUploadDTO> images) {
+        if (images == null) return;
+        for (ImageUploadDTO image : images) {
+            imageService.saveImage(ImageType.POST, postCode, image);
         }
     }
 
