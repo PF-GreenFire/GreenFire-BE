@@ -4,8 +4,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import sisosolsol.greenfire.common.enums.store.StoreStatus;
+import sisosolsol.greenfire.common.exception.CustomException;
+import sisosolsol.greenfire.common.exception.type.ExceptionCode;
 import sisosolsol.greenfire.common.security.model.AuthUser;
 import sisosolsol.greenfire.store.model.dto.StoreCreateDTO;
 import sisosolsol.greenfire.store.model.dto.StoreDetailDTO;
@@ -26,17 +30,22 @@ public class StoreController {
 
     private  final StoreService storeService;
 
-    // 관리자 초록불 장소 상태에 따른 목록 페이징 조회 [신청 대기, 신청 승인]
-    // TODO: 추후 관리자만 목록 조회 할수 있겠금 권한 체크 예정 / 현재 데이터 3개 조회 되므로 limit 2로 임시 지정 -> 추후 수정 예정/ 추후 신청 거절건에 관해 조회 할 수도 있어서 결정 되면, WAITING, APPROVE 외의 값에 대한 예외 처리 예정
+    // 관리자 초록불 장소 상태에 따른 목록 페이징 조회
     @Operation(summary = "장소 상태별 목록 페이징 조회 (관리자)")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @GetMapping("/{storeStatus}/list")
     public ResponseEntity<Map<String, Object>> getStoreListByStoreStatus(
             @PathVariable String storeStatus,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "2") int limit
+            @RequestParam(defaultValue = "10") int limit
     ) {
-        storeStatus = storeStatus.toUpperCase(); // 소문자로 들어왔을 경우, 대문자 변환
-        Map<String, Object> storeList = storeService.getStoreListByStoreStatus(storeStatus, page, limit);
+        String normalized = storeStatus.toUpperCase();
+        try {
+            StoreStatus.valueOf(normalized);
+        } catch (IllegalArgumentException e) {
+            throw new CustomException(ExceptionCode.INVALID_STORE_STATUS);
+        }
+        Map<String, Object> storeList = storeService.getStoreListByStoreStatus(normalized, page, limit);
         return ResponseEntity.ok(storeList);
     }
 
@@ -81,8 +90,11 @@ public class StoreController {
         return ResponseEntity.ok(updateDTO);
     }
 
-    // 관리자 장소 상태 변경 TODO: 관리자 권한 체크 예정, enum 타입 관리 유효성 검사 적용 예정
+    // 관리자 장소 상태 변경
+    // status 필드는 StoreUpdateStatusDTO에서 StoreStatus enum으로 받기 때문에
+    // 잘못된 값은 Jackson이 400으로 자동 거절함.
     @Operation(summary = "장소 상태 변경 (관리자)")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PatchMapping("/change/{storeCode}")
     public ResponseEntity<StoreUpdateStatusDTO> updateStoreStatus(
             @PathVariable int storeCode,
