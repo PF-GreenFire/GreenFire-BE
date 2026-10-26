@@ -34,6 +34,9 @@ public class PasswordResetCode {
     @Column(nullable = false)
     private boolean verified = false;
 
+    @Column(name = "attempt_count", nullable = false)
+    private int attemptCount = 0;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -50,5 +53,9 @@ public class PasswordResetCode {
 
     public void markVerified() {
         this.verified = true;
+    }
+
+    public void increaseAttempt() {
+        this.attemptCount++;
     }
 }

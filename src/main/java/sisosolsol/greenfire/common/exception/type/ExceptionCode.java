@@ -79,6 +79,8 @@ public enum ExceptionCode {
     // 404 Error - Report
     REPORT_NOT_FOUND(404, "신고를 찾을 수 없습니다."),
     REPORT_TARGET_NOT_FOUND(404, "신고 대상 콘텐츠를 찾을 수 없습니다."),
+    RESET_CODE_TOO_FREQUENT(429, "인증 코드는 1분에 한 번만 요청할 수 있습니다."),
+    RESET_CODE_TOO_MANY_ATTEMPTS(429, "인증 코드 입력 횟수를 초과했습니다. 코드를 다시 요청해주세요."),
 
     // 400 Error - Report
     INVALID_RESOURCE_TYPE(400, "유효하지 않은 리소스 타입입니다."),

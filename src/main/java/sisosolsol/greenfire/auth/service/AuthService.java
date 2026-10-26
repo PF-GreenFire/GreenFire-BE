@@ -16,6 +16,7 @@ import sisosolsol.greenfire.common.audit.entity.ActionType;
 import sisosolsol.greenfire.common.audit.entity.ResourceType;
 import sisosolsol.greenfire.common.audit.service.ActivityLogService;
 import sisosolsol.greenfire.common.exception.BadRequestException;
+import sisosolsol.greenfire.common.exception.CustomException;
 import sisosolsol.greenfire.common.exception.ConflictException;
 import sisosolsol.greenfire.common.exception.NotFoundException;
 import sisosolsol.greenfire.common.exception.type.ExceptionCode;
@@ -46,6 +47,8 @@ public class AuthService {
     );
     private static final int REJOIN_COOLDOWN_DAYS = 30;
     private static final int RESET_CODE_EXPIRY_MINUTES = 5;
+    private static final int RESET_CODE_RESEND_COOLDOWN_SECONDS = 60;
+    private static final int RESET_CODE_MAX_ATTEMPTS = 5;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final UserAccountRepository userAccountRepository;
@@ -269,6 +272,13 @@ public class AuthService {
         UserAccount user = userAccountRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new NotFoundException(ExceptionCode.USER_NOT_FOUND));
 
+        // 재요청 쿨다운 (메일 폭탄 방지)
+        passwordResetCodeRepository.findTopByEmailOrderByCreatedAtDesc(email).ifPresent(last -> {
+            if (last.getCreatedAt().plusSeconds(RESET_CODE_RESEND_COOLDOWN_SECONDS).isAfter(Instant.now())) {
+                throw new CustomException(ExceptionCode.RESET_CODE_TOO_FREQUENT);
+            }
+        });
+
         // 기존 코드 삭제
         passwordResetCodeRepository.deleteByEmail(email);
 
@@ -283,14 +293,23 @@ public class AuthService {
     /**
      * 비밀번호 재설정: 인증코드 검증
      */
-    @Transactional
+    // 오답 시 attempt_count 증가분은 예외가 나도 커밋되어야 함
+    @Transactional(noRollbackFor = BadRequestException.class)
     public void verifyResetCode(String email, String code) {
+        // 이메일별 최신 미검증 코드 하나만 대상으로 비교 — 실패 횟수를 누적해 무차별 대입 차단
         PasswordResetCode resetCode = passwordResetCodeRepository
-                .findByEmailAndCodeAndVerifiedFalse(email, code)
+                .findTopByEmailAndVerifiedFalseOrderByCreatedAtDesc(email)
                 .orElseThrow(() -> new BadRequestException(ExceptionCode.RESET_CODE_INVALID));
 
         if (resetCode.isExpired()) {
             throw new BadRequestException(ExceptionCode.RESET_CODE_EXPIRED);
+        }
+        if (resetCode.getAttemptCount() >= RESET_CODE_MAX_ATTEMPTS) {
+            throw new CustomException(ExceptionCode.RESET_CODE_TOO_MANY_ATTEMPTS);
+        }
+        if (!resetCode.getCode().equals(code)) {
+            resetCode.increaseAttempt();
+            throw new BadRequestException(ExceptionCode.RESET_CODE_INVALID);
         }
 
         resetCode.markVerified();
