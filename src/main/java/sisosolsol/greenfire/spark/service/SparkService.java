@@ -91,6 +91,11 @@ public class SparkService {
         return Tier.of(getTotalSpark(userCode));
     }
 
+    /** 같은 출처로 이미 적립한 이력이 있는지 (1회성 보상 중복 방지용) */
+    public boolean hasHistory(UUID userCode, String action, String sourceType, Integer sourceCode) {
+        return sparkMapper.countHistory(userCode, action, sourceType, sourceCode) > 0;
+    }
+
     /** 좋아요 수신에 의한 적립이 게시물당 캡 도달했는지 */
     public boolean isLikeRewardCapped(UUID userCode, int postCode) {
         return sparkMapper.countHistory(userCode, "LIKE_RECEIVED", "POST", postCode) >= LIKE_REWARD_CAP;

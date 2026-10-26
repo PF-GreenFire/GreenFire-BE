@@ -140,7 +140,10 @@ public class StoreService {
 
         var status = storeUpdateStatusDTO.getStatus();
         if (status == sisosolsol.greenfire.common.enums.store.StoreStatus.APPROVE) {
-            sparkService.award(applicant, 50, "STORE_APPROVED", "STORE", storeCode);
+            // 승인 ↔ 대기 재전환 시 중복 지급 방지 — 장소당 1회
+            if (!sparkService.hasHistory(applicant, "STORE_APPROVED", "STORE", storeCode)) {
+                sparkService.award(applicant, 50, "STORE_APPROVED", "STORE", storeCode);
+            }
             notificationService.notify(applicant,
                     sisosolsol.greenfire.notification.model.NotificationType.STORE_APPROVED,
                     null, "STORE", String.valueOf(storeCode));

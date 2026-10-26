@@ -153,4 +153,22 @@ class StoreServiceTest {
         // Assert
         verify(storeMapper).deleteStoreLike(userCode, storeCode);
     }
+
+    @Test
+    @DisplayName("updateStoreStatus(APPROVE): 이미 승인 보상을 받은 장소면 spark를 다시 지급하지 않는다")
+    void updateStoreStatus_reapprove_doesNotAwardTwice() {
+        int storeCode = 3;
+        UUID applicant = UUID.randomUUID();
+        StoreUpdateStatusDTO dto = mock(StoreUpdateStatusDTO.class);
+        when(dto.getStatus()).thenReturn(StoreStatus.APPROVE);
+        when(storeMapper.findApplicantUserCode(storeCode)).thenReturn(applicant);
+        when(sparkService.hasHistory(applicant, "STORE_APPROVED", "STORE", storeCode)).thenReturn(true);
+
+        storeService.updateStoreStatus(storeCode, dto);
+
+        verify(sparkService, org.mockito.Mockito.never())
+                .award(eq(applicant), org.mockito.ArgumentMatchers.anyInt(),
+                        org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.any());
+    }
 }
