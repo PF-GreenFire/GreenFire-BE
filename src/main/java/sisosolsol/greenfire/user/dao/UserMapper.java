@@ -31,7 +31,7 @@ public interface UserMapper {
 
     void changePassword(@Param("userCode") UUID userCode, @Param("password") String password);
 
-    void followUser(@Param("userCode") UUID userCode, @Param("targetUser") UUID targetUser);
+    int followUser(@Param("userCode") UUID userCode, @Param("targetUser") UUID targetUser);
 
     void deleteFollow(@Param("userCode") UUID userCode, @Param("targetUser") UUID targetUser);
 

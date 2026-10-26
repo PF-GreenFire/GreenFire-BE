@@ -61,6 +61,7 @@ public enum ExceptionCode {
     CHALLENGE_INVALID_RECRUITMENT(400, "모집 인원은 1명 이상이어야 합니다."),
     CHALLENGE_INVALID_XP(400, "보상 값은 0 이상이어야 합니다."),
     CHALLENGE_CODE_REQUIRED(400, "인증할 챌린지를 선택해주세요."),
+    CANNOT_FOLLOW_SELF(400, "본인은 팔로우할 수 없습니다."),
     FILE_SIZE_EXCEEDED(400, "파일 크기가 제한을 초과했습니다."),
     FILE_TYPE_NOT_ALLOWED(400, "허용되지 않은 파일 형식입니다."),
     CANNOT_CHANGE_OWN_ROLE(400, "본인의 역할은 변경할 수 없습니다."),

@@ -267,8 +267,13 @@ public class UserService {
     }
 
     public void followUser(UUID userCode, UUID targetUser) {
-        userMapper.followUser(userCode, targetUser);
-        notificationService.notify(targetUser,
+        if (userCode.equals(targetUser)) {
+            throw new BadRequestException(ExceptionCode.CANNOT_FOLLOW_SELF);
+        }
+        // 이미 팔로우 중이면 무시 (멱등)
+        if (userMapper.followUser(userCode, targetUser) == 0) return;
+        // 언팔로우 후 재팔로우 반복 시 알림 도배 방지 — 같은 팔로워 알림은 1회만
+        notificationService.notifyIfAbsent(targetUser,
                 sisosolsol.greenfire.notification.model.NotificationType.FOLLOWED,
                 userCode, "USER", userCode.toString());
     }
