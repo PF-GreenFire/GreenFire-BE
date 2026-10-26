@@ -151,6 +151,14 @@
         LIMIT #{size} OFFSET #{offset}
     </select>
 
+    <!-- 참여 신청 직렬화: 정원 확인~참여 저장 구간 동안 챌린지 행 잠금 -->
+    <select id="lockChallenge" resultType="int">
+        SELECT challenge_code
+        FROM challenge
+        WHERE challenge_code = #{challengeCode}
+        FOR UPDATE
+    </select>
+
     <select id="countCurrentParticipants" resultType="int">
         SELECT COUNT(*)
         FROM challenge_part

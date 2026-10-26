@@ -34,6 +34,7 @@ public class PostService {
 
     private final PostMapper postMapper;
     private final ImageService imageService;
+    private final sisosolsol.greenfire.challenge.service.ChallengeService challengeService;
 
     @Transactional(readOnly = true)
     public List<SimplePostDTO> getChallengePostList(Integer challengeCode) {
@@ -48,6 +49,8 @@ public class PostService {
     public int registChallengePost(PostCreateDTO post, UUID userId) {
         if(post.getPostType() != PostType.CHALLENGE)
             throw new BadRequestException(ExceptionCode.POST_TYPE_MISMATCH);
+
+        challengeService.assertCanCertify(post.getChallengeCode(), userId);
 
         try {
             postMapper.registChallengePost(post, userId);
@@ -92,6 +95,8 @@ public class PostService {
 
     private boolean hasPermission(Integer postCode, AuthUser user) {
         PostDTO targetPost = getPost(postCode);
+        if (targetPost == null)
+            throw new CustomException(ExceptionCode.POST_NOT_FOUND);
         return targetPost.getUserCode().equals(user.userId()) || user.role().equals(UserRole.ADMIN.name());
     }
 

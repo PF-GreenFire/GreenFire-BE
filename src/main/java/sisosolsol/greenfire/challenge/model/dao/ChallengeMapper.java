@@ -29,6 +29,8 @@ public interface ChallengeMapper {
     int updateChallengeStatus(@Param("challengeCode") Integer challengeCode,
                               @Param("status") ChallengeStatus status);
 
+    Integer lockChallenge(@Param("challengeCode") Integer challengeCode);
+
     int countCurrentParticipants(Integer challengeCode);
 
     void insertChallengePart(ChallengePartDTO challengePart);

@@ -32,6 +32,7 @@ public class FeedService {
     private final ImageService imageService;
     private final SparkService sparkService;
     private final sisosolsol.greenfire.notification.service.NotificationService notificationService;
+    private final sisosolsol.greenfire.challenge.service.ChallengeService challengeService;
 
     public FeedDetailDTO getFeedDetail(Integer postCode, UUID userCode) {
         FeedDetailDTO detail = feedMapper.getFeedDetail(postCode, userCode);
@@ -125,12 +126,20 @@ public class FeedService {
 
     @Transactional
     public Integer createPost(FeedCreateRequest request, List<MultipartFile> images, UUID userCode) {
+        // 챌린지 인증글은 진행 중 챌린지의 참여자(또는 호스트)만. 그 외 타입은 챌린지 연결 불가.
+        Integer challengeCode = request.getChallengeCode();
+        if (request.getPostType() == sisosolsol.greenfire.common.enums.post.PostType.CHALLENGE) {
+            challengeService.assertCanCertify(challengeCode, userCode);
+        } else {
+            challengeCode = null;
+        }
+
         PostInsertParam param = new PostInsertParam();
         param.setUserCode(userCode);
         param.setPostContent(request.getPostContent());
         param.setPostType(request.getPostType());
         param.setStoreCode(request.getStoreCode());
-        param.setChallengeCode(request.getChallengeCode());
+        param.setChallengeCode(challengeCode);
 
         feedMapper.insertPost(param);
         Integer postCode = param.getPostCode();

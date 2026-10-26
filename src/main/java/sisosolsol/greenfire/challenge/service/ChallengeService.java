@@ -14,6 +14,7 @@ import sisosolsol.greenfire.challenge.model.dto.ChallengeUpdateDTO;
 import sisosolsol.greenfire.common.enums.challenge.ChallengeStatus;
 import sisosolsol.greenfire.common.exception.CustomException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -51,11 +52,11 @@ public class ChallengeService {
             }
         }
 
-        // 2) CLOSED 전이 — 보상 + 종료 알림
+        // 2) CLOSED 전이 — 완주 기록(+보상) + 종료 알림
+        // xp가 0이어도 완주 이력(spark_history amount=0)은 남겨 완주 뱃지 집계에 포함한다.
         int rewardsGranted = 0;
         for (ChallengeDTO ch : challengeMapper.selectClosedChallenges()) {
-            int reward = ch.getXp() == null ? 0 : ch.getXp();
-            if (reward <= 0) continue;
+            int reward = ch.getXp() == null ? 0 : Math.max(ch.getXp(), 0);
             UUID hostUser = ch.getHostUser();
             for (UUID userCode : challengeMapper.selectParticipantCodes(ch.getChallengeCode())) {
                 // 호스트 self-skip — 본인이 만든 챌린지로 본인 보상 막기
@@ -65,10 +66,12 @@ public class ChallengeService {
                 if (already > 0) continue;
                 sparkService.award(userCode, reward, "CHALLENGE_COMPLETE",
                         "CHALLENGE", ch.getChallengeCode());
-                notificationService.notify(userCode,
-                        sisosolsol.greenfire.notification.model.NotificationType.CHALLENGE_REWARDED,
-                        null, "CHALLENGE", String.valueOf(ch.getChallengeCode()));
-                rewardsGranted++;
+                if (reward > 0) {
+                    notificationService.notify(userCode,
+                            sisosolsol.greenfire.notification.model.NotificationType.CHALLENGE_REWARDED,
+                            null, "CHALLENGE", String.valueOf(ch.getChallengeCode()));
+                    rewardsGranted++;
+                }
             }
         }
         log.info("challenge transitions: toOngoing={}, toClosed={}, rewards={}",
@@ -79,9 +82,49 @@ public class ChallengeService {
     public record TransitionReport(int toOngoing, int toClosed, int rewardsGranted) {}
 
     public Integer registChallenge(ChallengeCreateDTO challengeCreate, UUID userId) {
+        validateChallengeCreate(challengeCreate);
         challengeCreate.setHostUser(userId);
         challengeMapper.registChallenge(challengeCreate);
         return challengeCreate.getChallengeCode();
+    }
+
+    private void validateChallengeCreate(ChallengeCreateDTO create) {
+        if (create.getChallengeTitle() == null || create.getChallengeTitle().isBlank()) {
+            throw new CustomException(CHALLENGE_TITLE_REQUIRED);
+        }
+        LocalDate today = LocalDate.now();
+        if (create.getStartDate() == null || create.getEndDate() == null
+                || create.getStartDate().isBefore(today)
+                || create.getEndDate().isBefore(create.getStartDate())) {
+            throw new CustomException(CHALLENGE_INVALID_PERIOD);
+        }
+        if (create.getRecruitmentNum() == null || create.getRecruitmentNum() < 1) {
+            throw new CustomException(CHALLENGE_INVALID_RECRUITMENT);
+        }
+        if (create.getXp() != null && create.getXp() < 0) {
+            throw new CustomException(CHALLENGE_INVALID_XP);
+        }
+    }
+
+    /**
+     * 인증글 작성 자격 검증: 진행 중(ONGOING)인 챌린지의 참여자 또는 호스트만 인증할 수 있다.
+     */
+    @Transactional(readOnly = true)
+    public void assertCanCertify(Integer challengeCode, UUID userId) {
+        if (challengeCode == null) {
+            throw new CustomException(CHALLENGE_CODE_REQUIRED);
+        }
+        ChallengeDTO challenge = challengeMapper.selectChallengeByCode(challengeCode);
+        if (challenge == null) {
+            throw new CustomException(CHALLENGE_NOT_FOUND);
+        }
+        if (challenge.getChallengeStatus() != ChallengeStatus.ONGOING) {
+            throw new CustomException(CHALLENGE_NOT_ONGOING);
+        }
+        boolean isHost = userId.equals(challenge.getHostUser());
+        if (!isHost && challengeMapper.selectChallengePart(challengeCode, userId) == null) {
+            throw new CustomException(CHALLENGE_NOT_PARTICIPATED);
+        }
     }
 
     public ChallengeSearchDTO getChallenges(int page, int size, String searchKeyword, Integer categoryCode) {
@@ -177,7 +220,10 @@ public class ChallengeService {
     @Transactional
     public void applyChallenge(Integer challengeCode, UUID userId) {
 
-        // 1. 챌린지 정보 조회
+        // 1. 챌린지 행 잠금 (동시 신청 시 정원 초과 방지) + 정보 조회
+        if (challengeMapper.lockChallenge(challengeCode) == null) {
+            throw new CustomException(CHALLENGE_NOT_FOUND);
+        }
         ChallengeDTO challenge = challengeMapper.selectChallengeByCode(challengeCode);
         if (challenge == null) {
             throw new CustomException(CHALLENGE_NOT_FOUND);

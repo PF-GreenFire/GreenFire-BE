@@ -37,6 +37,9 @@ class PostServiceTest {
     @Mock
     private ImageService imageService;
 
+    @Mock
+    private sisosolsol.greenfire.challenge.service.ChallengeService challengeService;
+
     @InjectMocks
     private PostService postService;
 
@@ -151,5 +154,31 @@ class PostServiceTest {
 
         // Assert
         verify(postMapper).updatePost(postCode, update);
+    }
+
+    @Test
+    @DisplayName("updatePost/deletePost: 없는 게시글이면 NPE가 아니라 POST_NOT_FOUND")
+    void updateOrDelete_missingPost_throwsNotFound() {
+        AuthUser user = new AuthUser(UUID.randomUUID(), "a@b.c", UserRole.USER.name());
+        when(postMapper.getPost(404)).thenReturn(null);
+
+        assertThatThrownBy(() -> postService.deletePost(404, user))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("게시글을 찾을 수 없습니다");
+    }
+
+    @Test
+    @DisplayName("registChallengePost: 인증 자격이 없으면 저장하지 않는다")
+    void registChallengePost_checksCertification() {
+        UUID userId = UUID.randomUUID();
+        PostCreateDTO post = mock(PostCreateDTO.class);
+        when(post.getPostType()).thenReturn(PostType.CHALLENGE);
+        when(post.getChallengeCode()).thenReturn(1);
+        doThrow(new CustomException(sisosolsol.greenfire.common.exception.type.ExceptionCode.CHALLENGE_NOT_PARTICIPATED))
+                .when(challengeService).assertCanCertify(1, userId);
+
+        assertThatThrownBy(() -> postService.registChallengePost(post, userId))
+                .isInstanceOf(CustomException.class);
+        verify(postMapper, org.mockito.Mockito.never()).registChallengePost(post, userId);
     }
 }
