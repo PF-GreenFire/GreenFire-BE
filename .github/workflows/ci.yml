@@ -27,3 +27,7 @@ jobs:
 
       - name: Compile
         run: ./gradlew compileJava compileTestJava
+
+      # DB/시크릿 없이 도는 Mockito 단위 테스트만 실행 (통합 테스트는 DB 필요)
+      - name: Unit tests
+        run: ./gradlew test --tests '*ServiceTest'
