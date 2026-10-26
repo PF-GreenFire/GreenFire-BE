@@ -41,11 +41,16 @@ public interface FeedMapper {
     void softDeleteComment(@Param("commentCode") Integer commentCode);
 
     List<FeedListItemDTO> getFeedList(@Param("userCode") UUID userCode,
+                                      @Param("postType") String postType,
                                       @Param("cursorPostCode") Integer cursorPostCode,
                                       @Param("size") int size);
 
     List<FeedListItemDTO> getFeaturedPosts(@Param("userCode") UUID userCode,
                                            @Param("limit") int limit);
+
+    int toggleFeatured(@Param("postCode") Integer postCode);
+
+    boolean selectFeatured(@Param("postCode") Integer postCode);
 
     void insertPost(sisosolsol.greenfire.feed.model.dto.PostInsertParam param);
 

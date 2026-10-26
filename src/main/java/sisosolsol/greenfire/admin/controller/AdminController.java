@@ -24,6 +24,14 @@ public class AdminController {
 
     private final AdminService adminService;
     private final sisosolsol.greenfire.challenge.service.ChallengeService challengeService;
+    private final sisosolsol.greenfire.feed.service.FeedService feedService;
+
+    @Operation(summary = "피드 추천(featured) 토글")
+    @PostMapping("/feed/{postCode}/feature")
+    public ResponseEntity<sisosolsol.greenfire.feed.model.dto.FeaturedToggleResponse> toggleFeedFeatured(
+            @PathVariable Integer postCode) {
+        return ResponseEntity.ok(feedService.toggleFeatured(postCode));
+    }
 
     /** 챌린지 상태 전이 + 보상을 즉시 실행. 데모/디버깅용. cron(매일 1:05)과 동일 로직. */
     @Operation(summary = "챌린지 상태 전이 + 보상 즉시 실행 (데모/디버깅용)")

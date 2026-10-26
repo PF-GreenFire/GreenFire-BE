@@ -12,7 +12,7 @@
             u.nickname            AS nickname,
             NULL                  AS profileImage,
             FALSE                 AS isFollowing,
-            FALSE                 AS featured,
+            p.featured            AS featured,
             p.created_at          AS createdAt,
             p.post_content        AS postContent,
             p.post_type           AS postType,
@@ -147,7 +147,7 @@
         u.nickname            AS nickname,
         NULL                  AS profileImage,
         FALSE                 AS isFollowing,
-        FALSE                 AS featured,
+        p.featured            AS featured,
         p.created_at          AS createdAt,
         p.post_content        AS postContent,
         p.post_type           AS postType,
@@ -184,6 +184,9 @@
         <include refid="feedListColumns"/>
         <include refid="feedListJoins"/>
         WHERE p.post_status = 'ACTIVE'
+        <if test="postType != null and postType != ''">
+            AND p.post_type = #{postType}
+        </if>
         <if test="cursorPostCode != null">
             AND p.post_code &lt; #{cursorPostCode}
         </if>
@@ -191,14 +194,26 @@
         LIMIT #{size}
     </select>
 
-    <!-- 추천 피드 (현재는 단순 최신순 LIMIT — featured 컬럼/관리자 토글 도입 후 정상화) -->
+    <!-- 추천 피드: 관리자 추천(featured) 우선, 부족분은 최신순으로 채움 -->
     <select id="getFeaturedPosts" resultType="sisosolsol.greenfire.feed.model.dto.FeedListItemDTO">
         SELECT
         <include refid="feedListColumns"/>
         <include refid="feedListJoins"/>
         WHERE p.post_status = 'ACTIVE'
-        ORDER BY p.post_code DESC
+        ORDER BY p.featured DESC, p.post_code DESC
         LIMIT #{limit}
+    </select>
+
+    <!-- 관리자: 추천 상태 반전 (ACTIVE 게시글만) -->
+    <update id="toggleFeatured">
+        UPDATE post
+        SET featured = NOT featured
+        WHERE post_code = #{postCode}
+          AND post_status = 'ACTIVE'
+    </update>
+
+    <select id="selectFeatured" resultType="boolean">
+        SELECT featured FROM post WHERE post_code = #{postCode}
     </select>
 
     <!-- 인증글 등록 (postCode를 keyProperty로 받음) -->

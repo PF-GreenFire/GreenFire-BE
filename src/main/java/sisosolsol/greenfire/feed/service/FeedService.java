@@ -8,6 +8,7 @@ import sisosolsol.greenfire.common.enums.image.ImageType;
 import sisosolsol.greenfire.common.exception.CustomException;
 import sisosolsol.greenfire.common.exception.type.ExceptionCode;
 import sisosolsol.greenfire.feed.model.dao.FeedMapper;
+import sisosolsol.greenfire.feed.model.dto.FeaturedToggleResponse;
 import sisosolsol.greenfire.feed.model.dto.CommentCreateParam;
 import sisosolsol.greenfire.feed.model.dto.CommentDTO;
 import sisosolsol.greenfire.feed.model.dto.FeedCreateRequest;
@@ -95,9 +96,9 @@ public class FeedService {
         return feedMapper.getComment(param.getCommentCode());
     }
 
-    public FeedListResponse getFeedList(UUID userCode, Integer cursorPostCode, int size) {
+    public FeedListResponse getFeedList(UUID userCode, String postType, Integer cursorPostCode, int size) {
         // size+1을 가져와 hasMore 판정
-        List<FeedListItemDTO> rows = feedMapper.getFeedList(userCode, cursorPostCode, size + 1);
+        List<FeedListItemDTO> rows = feedMapper.getFeedList(userCode, postType, cursorPostCode, size + 1);
         boolean hasMore = rows.size() > size;
         List<FeedListItemDTO> content = hasMore ? rows.subList(0, size) : rows;
 
@@ -112,6 +113,14 @@ public class FeedService {
 
     public List<FeedListItemDTO> getFeaturedPosts(UUID userCode, int limit) {
         return feedMapper.getFeaturedPosts(userCode, limit);
+    }
+
+    @Transactional
+    public FeaturedToggleResponse toggleFeatured(Integer postCode) {
+        if (feedMapper.toggleFeatured(postCode) == 0) {
+            throw new CustomException(ExceptionCode.POST_NOT_FOUND);
+        }
+        return new FeaturedToggleResponse(postCode, feedMapper.selectFeatured(postCode));
     }
 
     @Transactional

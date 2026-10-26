@@ -35,13 +35,14 @@ public class FeedController {
     @GetMapping
     public ResponseEntity<FeedListResponse> getFeedList(
             @RequestParam(required = false) String type,
+            @RequestParam(required = false) String postType,
             @RequestParam(required = false) Integer cursorPostCode,
             @RequestParam(required = false) Double cursorScore,
             @RequestParam(defaultValue = "10") int size,
             @AuthenticationPrincipal AuthUser user) {
         // type/cursorScore는 추천 알고리즘 도입 후 활용 (지금은 최신순 cursor)
         return ResponseEntity.ok(
-                feedService.getFeedList(user != null ? user.userId() : null, cursorPostCode, size)
+                feedService.getFeedList(user != null ? user.userId() : null, postType, cursorPostCode, size)
         );
     }
 

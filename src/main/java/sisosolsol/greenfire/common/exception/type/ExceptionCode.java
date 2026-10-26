@@ -29,6 +29,7 @@ public enum ExceptionCode {
     USER_NOT_FOUND(404, "사용자를 찾을 수 없습니다."),
     CHALLENGE_NOT_FOUND(404, "존재하지 않는 챌린지입니다."),
     NOTICE_NOT_FOUND(404, "공지사항을 찾을 수 없습니다."),
+    POST_NOT_FOUND(404, "게시글을 찾을 수 없습니다."),
 
     // 409 Error
     EMAIL_ALREADY_EXISTS(409, "이미 가입된 이메일입니다."),
