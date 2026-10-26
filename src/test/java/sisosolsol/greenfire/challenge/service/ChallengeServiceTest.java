@@ -10,6 +10,9 @@ import sisosolsol.greenfire.challenge.model.dao.ChallengeMapper;
 import sisosolsol.greenfire.challenge.model.dto.ChallengeCreateDTO;
 import sisosolsol.greenfire.challenge.model.dto.ChallengeDTO;
 import sisosolsol.greenfire.challenge.model.dto.ChallengePartDTO;
+import sisosolsol.greenfire.challenge.completion.CompletionPolicy;
+import sisosolsol.greenfire.challenge.completion.CompletionResult;
+import sisosolsol.greenfire.notification.model.NotificationType;
 import sisosolsol.greenfire.common.enums.challenge.ChallengeStatus;
 import sisosolsol.greenfire.common.exception.CustomException;
 import sisosolsol.greenfire.notification.service.NotificationService;
@@ -17,7 +20,9 @@ import sisosolsol.greenfire.spark.model.dao.SparkMapper;
 import sisosolsol.greenfire.spark.service.SparkService;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -44,6 +49,9 @@ class ChallengeServiceTest {
     @Mock
     private NotificationService notificationService;
 
+    @Mock
+    private ChallengeCompletionService completionService;
+
     @InjectMocks
     private ChallengeService challengeService;
 
@@ -62,7 +70,14 @@ class ChallengeServiceTest {
         ch.setChallengeCode(code);
         ch.setChallengeStatus(status);
         ch.setHostUser(host);
+        // 오늘이 기간 안에 들도록 (인증 자격 검증이 날짜도 확인)
+        ch.setStartDate(LocalDate.now().minusDays(3));
+        ch.setEndDate(LocalDate.now().plusDays(3));
         return ch;
+    }
+
+    private static CompletionResult result(boolean completed) {
+        return new CompletionResult(completed, 0, List.of());
     }
 
     // ─── CH-3: 등록 검증 ───
@@ -72,10 +87,13 @@ class ChallengeServiceTest {
     void registChallenge_savesWithHost() {
         UUID userId = UUID.randomUUID();
         ChallengeCreateDTO dto = validCreate();
+        CompletionPolicy policy = CompletionPolicy.defaultPolicy();
+        when(completionService.buildPolicy(any(), any())).thenReturn(policy);
 
         challengeService.registChallenge(dto, userId);
 
         verify(challengeMapper).registChallenge(dto);
+        verify(completionService).savePolicy(dto.getChallengeCode(), policy);
         org.assertj.core.api.Assertions.assertThat(dto.getHostUser()).isEqualTo(userId);
     }
 
@@ -179,25 +197,78 @@ class ChallengeServiceTest {
         verify(challengeMapper, never()).insertChallengePart(any());
     }
 
-    // ─── CH-5: xp 0 챌린지도 완주 기록 ───
+    // ─── 종료 정산: 완주 조건 ───
 
     @Test
-    @DisplayName("runStatusTransitions: xp가 0이어도 참여자 완주 이력을 남기고, 보상 알림은 보내지 않는다")
-    void runStatusTransitions_zeroXp_recordsCompletionWithoutRewardNotice() {
+    @DisplayName("runStatusTransitions: 완주자만 xp 보상, 미완주자는 결과 알림, 호스트는 평가 대상에서 제외")
+    void runStatusTransitions_rewardsOnlyCompleters() {
         UUID host = UUID.randomUUID();
-        UUID participant = UUID.randomUUID();
+        UUID finisher = UUID.randomUUID();
+        UUID dropout = UUID.randomUUID();
         ChallengeDTO closed = challenge(5, ChallengeStatus.CLOSED, host);
-        closed.setXp(0);
+        closed.setXp(30);
+        Map<UUID, CompletionResult> results = new LinkedHashMap<>();
+        results.put(finisher, result(true));
+        results.put(dropout, result(false));
+
         when(challengeMapper.selectOngoingChallenges()).thenReturn(List.of());
-        when(challengeMapper.selectClosedChallenges()).thenReturn(List.of(closed));
-        when(challengeMapper.selectParticipantCodes(5)).thenReturn(List.of(host, participant));
-        when(sparkMapper.countHistory(participant, "CHALLENGE_COMPLETE", "CHALLENGE", 5)).thenReturn(0);
+        when(completionService.findChallengesToEvaluate()).thenReturn(List.of(closed));
+        when(challengeMapper.selectParticipantCodes(5)).thenReturn(List.of(host, finisher, dropout));
+        when(completionService.evaluateAll(closed, List.of(finisher, dropout))).thenReturn(results);
 
         ChallengeService.TransitionReport report = challengeService.runStatusTransitions();
 
-        verify(sparkService).award(participant, 0, "CHALLENGE_COMPLETE", "CHALLENGE", 5);
-        verify(sparkService, never()).award(eq(host), any(Integer.class), anyString(), anyString(), any());
-        verify(notificationService, never()).notify(any(), any(), any(), anyString(), anyString());
+        verify(sparkService).award(finisher, 30, "CHALLENGE_COMPLETE", "CHALLENGE", 5);
+        verify(sparkService, never()).award(eq(dropout), any(Integer.class), anyString(), anyString(), any());
+        verify(notificationService).notify(finisher, NotificationType.CHALLENGE_REWARDED, null, "CHALLENGE", "5");
+        verify(notificationService).notifyIfAbsent(dropout, NotificationType.CHALLENGE_NOT_COMPLETED, null, "CHALLENGE", "5");
+        verify(completionService).recordCompletion(5, finisher, true);
+        verify(completionService).recordCompletion(5, dropout, false);
+        verify(completionService).markEvaluated(5);
+        org.assertj.core.api.Assertions.assertThat(report.rewardsGranted()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("runStatusTransitions: xp 0 챌린지 완주자는 완주 이력만 남고 '완주' 알림을 받는다")
+    void runStatusTransitions_zeroXp_recordsCompletion() {
+        UUID participant = UUID.randomUUID();
+        ChallengeDTO closed = challenge(6, ChallengeStatus.CLOSED, UUID.randomUUID());
+        closed.setXp(0);
+        when(challengeMapper.selectOngoingChallenges()).thenReturn(List.of());
+        when(completionService.findChallengesToEvaluate()).thenReturn(List.of(closed));
+        when(challengeMapper.selectParticipantCodes(6)).thenReturn(List.of(participant));
+        when(completionService.evaluateAll(closed, List.of(participant)))
+                .thenReturn(Map.of(participant, result(true)));
+
+        ChallengeService.TransitionReport report = challengeService.runStatusTransitions();
+
+        verify(sparkService).award(participant, 0, "CHALLENGE_COMPLETE", "CHALLENGE", 6);
+        verify(notificationService).notify(participant, NotificationType.CHALLENGE_COMPLETED, null, "CHALLENGE", "6");
         org.assertj.core.api.Assertions.assertThat(report.rewardsGranted()).isZero();
+    }
+
+    @Test
+    @DisplayName("assertCanCertify: 상태는 ONGOING이어도 종료일이 지났으면 인증 불가")
+    void assertCanCertify_afterEndDate_throws() {
+        UUID userId = UUID.randomUUID();
+        ChallengeDTO ch = challenge(1, ChallengeStatus.ONGOING, UUID.randomUUID());
+        ch.setStartDate(LocalDate.now().minusDays(7));
+        ch.setEndDate(LocalDate.now().minusDays(1));
+        when(challengeMapper.selectChallengeByCode(1)).thenReturn(ch);
+
+        assertThatThrownBy(() -> challengeService.assertCanCertify(1, userId))
+                .hasMessageContaining("진행 중인");
+    }
+
+    @Test
+    @DisplayName("getMyProgress: 참여자도 호스트도 아니면 CHALLENGE_NOT_PARTICIPATED")
+    void getMyProgress_nonParticipant_throws() {
+        UUID userId = UUID.randomUUID();
+        when(challengeMapper.selectChallengeByCode(1))
+                .thenReturn(challenge(1, ChallengeStatus.ONGOING, UUID.randomUUID()));
+        when(challengeMapper.selectChallengePart(1, userId)).thenReturn(null);
+
+        assertThatThrownBy(() -> challengeService.getMyProgress(1, userId))
+                .hasMessageContaining("참여하지 않은");
     }
 }

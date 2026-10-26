@@ -79,6 +79,8 @@ public class NotificationService {
             case STORE_APPROVED     -> "신청한 매장이 승인됐어요";
             case STORE_REJECTED     -> "신청한 매장이 반려됐어요";
             case REPORT_HANDLED     -> "내가 보낸 신고가 처리됐어요";
+            case CHALLENGE_COMPLETED     -> "챌린지를 완주했어요";
+            case CHALLENGE_NOT_COMPLETED -> "아쉽게도 챌린지 완주 조건을 채우지 못했어요";
         };
     }
 

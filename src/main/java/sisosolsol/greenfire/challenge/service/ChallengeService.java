@@ -4,7 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sisosolsol.greenfire.challenge.completion.ChallengePeriod;
+import sisosolsol.greenfire.challenge.completion.CompletionPolicy;
+import sisosolsol.greenfire.challenge.completion.CompletionResult;
 import sisosolsol.greenfire.challenge.model.dao.ChallengeMapper;
+import sisosolsol.greenfire.challenge.model.dto.completion.ChallengeProgressResponse;
+import sisosolsol.greenfire.challenge.model.dto.completion.CompletionRuleResponse;
+import sisosolsol.greenfire.notification.model.NotificationType;
 import sisosolsol.greenfire.challenge.model.dto.ChallengeCreateDTO;
 import sisosolsol.greenfire.challenge.model.dto.ChallengeDTO;
 import sisosolsol.greenfire.challenge.model.dto.ChallengePartDTO;
@@ -17,6 +23,7 @@ import sisosolsol.greenfire.common.exception.CustomException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static sisosolsol.greenfire.common.exception.type.ExceptionCode.*;
@@ -31,12 +38,13 @@ public class ChallengeService {
     private final sisosolsol.greenfire.spark.service.SparkService sparkService;
     private final sisosolsol.greenfire.spark.model.dao.SparkMapper sparkMapper;
     private final sisosolsol.greenfire.notification.service.NotificationService notificationService;
+    private final ChallengeCompletionService completionService;
 
     /**
      * 매일 자정 이후 1회 호출되거나 어드민 수동 트리거로 호출.
      * 1) RECRUITING → ONGOING (start_date 도래)
      * 2) ONGOING → CLOSED (end_date 경과)
-     * 3) CLOSED 챌린지의 모든 참여자에게 challenge.xp 만큼 1회만 보상 (spark_history로 중복 방지)
+     * 3) CLOSED 챌린지 완주 평가 — 챌린지마다 1회. 완주 조건을 모두 충족한 참여자만 xp 보상
      */
     public TransitionReport runStatusTransitions() {
         int toOngoing = challengeMapper.bulkTransitionToOngoing();
@@ -52,27 +60,11 @@ public class ChallengeService {
             }
         }
 
-        // 2) CLOSED 전이 — 완주 기록(+보상) + 종료 알림
-        // xp가 0이어도 완주 이력(spark_history amount=0)은 남겨 완주 뱃지 집계에 포함한다.
+        // 2) CLOSED 챌린지 완주 평가 (평가가 끝난 챌린지는 다시 보지 않음)
         int rewardsGranted = 0;
-        for (ChallengeDTO ch : challengeMapper.selectClosedChallenges()) {
-            int reward = ch.getXp() == null ? 0 : Math.max(ch.getXp(), 0);
-            UUID hostUser = ch.getHostUser();
-            for (UUID userCode : challengeMapper.selectParticipantCodes(ch.getChallengeCode())) {
-                // 호스트 self-skip — 본인이 만든 챌린지로 본인 보상 막기
-                if (userCode.equals(hostUser)) continue;
-                int already = sparkMapper.countHistory(userCode, "CHALLENGE_COMPLETE",
-                        "CHALLENGE", ch.getChallengeCode());
-                if (already > 0) continue;
-                sparkService.award(userCode, reward, "CHALLENGE_COMPLETE",
-                        "CHALLENGE", ch.getChallengeCode());
-                if (reward > 0) {
-                    notificationService.notify(userCode,
-                            sisosolsol.greenfire.notification.model.NotificationType.CHALLENGE_REWARDED,
-                            null, "CHALLENGE", String.valueOf(ch.getChallengeCode()));
-                    rewardsGranted++;
-                }
-            }
+        for (ChallengeDTO ch : completionService.findChallengesToEvaluate()) {
+            rewardsGranted += settleCompletion(ch);
+            completionService.markEvaluated(ch.getChallengeCode());
         }
         log.info("challenge transitions: toOngoing={}, toClosed={}, rewards={}",
                 toOngoing, toClosed, rewardsGranted);
@@ -81,10 +73,51 @@ public class ChallengeService {
 
     public record TransitionReport(int toOngoing, int toClosed, int rewardsGranted) {}
 
+    /**
+     * 종료된 챌린지 하나의 완주 정산. 완주자는 완주 이력(+xp)과 알림, 미완주자는 결과 알림만.
+     * xp가 0이어도 완주 이력(spark_history amount=0)은 남겨 완주 뱃지 집계에 포함한다.
+     * @return xp 보상을 받은 인원
+     */
+    private int settleCompletion(ChallengeDTO ch) {
+        int reward = ch.getXp() == null ? 0 : Math.max(ch.getXp(), 0);
+        String resourceCode = String.valueOf(ch.getChallengeCode());
+        // 호스트 self-skip — 본인이 만든 챌린지로 본인 보상 막기
+        List<UUID> participants = challengeMapper.selectParticipantCodes(ch.getChallengeCode()).stream()
+                .filter(userCode -> !userCode.equals(ch.getHostUser()))
+                .toList();
+
+        int granted = 0;
+        for (Map.Entry<UUID, CompletionResult> entry : completionService.evaluateAll(ch, participants).entrySet()) {
+            UUID userCode = entry.getKey();
+            boolean completed = entry.getValue().completed();
+            completionService.recordCompletion(ch.getChallengeCode(), userCode, completed);
+
+            if (!completed) {
+                notificationService.notifyIfAbsent(userCode, NotificationType.CHALLENGE_NOT_COMPLETED,
+                        null, "CHALLENGE", resourceCode);
+                continue;
+            }
+            if (sparkMapper.countHistory(userCode, "CHALLENGE_COMPLETE", "CHALLENGE", ch.getChallengeCode()) > 0) {
+                continue;
+            }
+            sparkService.award(userCode, reward, "CHALLENGE_COMPLETE", "CHALLENGE", ch.getChallengeCode());
+            notificationService.notify(userCode,
+                    reward > 0 ? NotificationType.CHALLENGE_REWARDED : NotificationType.CHALLENGE_COMPLETED,
+                    null, "CHALLENGE", resourceCode);
+            if (reward > 0) granted++;
+        }
+        return granted;
+    }
+
     public Integer registChallenge(ChallengeCreateDTO challengeCreate, UUID userId) {
         validateChallengeCreate(challengeCreate);
+        // 완주 조건은 저장 전에 검증 (잘못된 조건이면 챌린지도 만들지 않음)
+        CompletionPolicy policy = completionService.buildPolicy(challengeCreate.getCompletionRules(),
+                new ChallengePeriod(challengeCreate.getStartDate(), challengeCreate.getEndDate()));
+
         challengeCreate.setHostUser(userId);
         challengeMapper.registChallenge(challengeCreate);
+        completionService.savePolicy(challengeCreate.getChallengeCode(), policy);
         return challengeCreate.getChallengeCode();
     }
 
@@ -92,17 +125,20 @@ public class ChallengeService {
         if (create.getChallengeTitle() == null || create.getChallengeTitle().isBlank()) {
             throw new CustomException(CHALLENGE_TITLE_REQUIRED);
         }
-        LocalDate today = LocalDate.now();
-        if (create.getStartDate() == null || create.getEndDate() == null
-                || create.getStartDate().isBefore(today)
-                || create.getEndDate().isBefore(create.getStartDate())) {
-            throw new CustomException(CHALLENGE_INVALID_PERIOD);
-        }
+        validatePeriod(create.getStartDate(), create.getEndDate());
         if (create.getRecruitmentNum() == null || create.getRecruitmentNum() < 1) {
             throw new CustomException(CHALLENGE_INVALID_RECRUITMENT);
         }
         if (create.getXp() != null && create.getXp() < 0) {
             throw new CustomException(CHALLENGE_INVALID_XP);
+        }
+    }
+
+    private void validatePeriod(LocalDate start, LocalDate end) {
+        if (start == null || end == null
+                || start.isBefore(ChallengePeriod.today())
+                || end.isBefore(start)) {
+            throw new CustomException(CHALLENGE_INVALID_PERIOD);
         }
     }
 
@@ -118,7 +154,9 @@ public class ChallengeService {
         if (challenge == null) {
             throw new CustomException(CHALLENGE_NOT_FOUND);
         }
-        if (challenge.getChallengeStatus() != ChallengeStatus.ONGOING) {
+        // 상태 전이는 하루 1회라 종료일 다음 날 새벽에도 ONGOING일 수 있음 → 날짜도 함께 확인
+        if (challenge.getChallengeStatus() != ChallengeStatus.ONGOING
+                || !ChallengeCompletionService.periodOf(challenge).contains(ChallengePeriod.today())) {
             throw new CustomException(CHALLENGE_NOT_ONGOING);
         }
         boolean isHost = userId.equals(challenge.getHostUser());
@@ -153,8 +191,27 @@ public class ChallengeService {
     public ChallengeDTO getChallengeDetails(Integer challengeCode) {
 
         ChallengeDTO challengeDetails = challengeMapper.selectChallengeByCode(challengeCode);
-
+        if (challengeDetails != null) {
+            challengeDetails.setCompletionRules(completionService.loadPolicy(challengeCode).rules().stream()
+                    .map(CompletionRuleResponse::from)
+                    .toList());
+        }
         return challengeDetails;
+    }
+
+    /** 내 완주 진행 상황 — 참여자 또는 호스트만 */
+    @Transactional(readOnly = true)
+    public ChallengeProgressResponse getMyProgress(Integer challengeCode, UUID userId) {
+        ChallengeDTO challenge = challengeMapper.selectChallengeByCode(challengeCode);
+        if (challenge == null) {
+            throw new CustomException(CHALLENGE_NOT_FOUND);
+        }
+        boolean isHost = userId.equals(challenge.getHostUser());
+        if (!isHost && challengeMapper.selectChallengePart(challengeCode, userId) == null) {
+            throw new CustomException(CHALLENGE_NOT_PARTICIPATED);
+        }
+        CompletionResult result = completionService.evaluate(challenge, userId);
+        return ChallengeProgressResponse.of(result, ChallengeCompletionService.periodOf(challenge).days());
     }
 
     public List<ChallengeDTO> getClosingSoonChallenges(int limit) {
@@ -183,7 +240,16 @@ public class ChallengeService {
             throw new CustomException(CHALLENGE_ALREADY_STARTED);
         }
 
-        // 4. 모집 인원을 현재 참여자 수보다 적게 설정하는 경우 방지
+        // 4. 기간 변경 시 재검증, 완주 조건은 새 기간 기준으로 다시 검증
+        LocalDate newStart = update.getStartDate() != null ? update.getStartDate() : challenge.getStartDate();
+        LocalDate newEnd = update.getEndDate() != null ? update.getEndDate() : challenge.getEndDate();
+        validatePeriod(newStart, newEnd);
+        ChallengePeriod newPeriod = new ChallengePeriod(newStart, newEnd);
+        CompletionPolicy policy = update.getCompletionRules() != null
+                ? completionService.buildPolicy(update.getCompletionRules(), newPeriod)
+                : completionService.revalidate(completionService.loadPolicy(challengeCode), newPeriod);
+
+        // 5. 모집 인원을 현재 참여자 수보다 적게 설정하는 경우 방지
         if (update.getRecruitmentNum() != null) {
             int currentParticipants = challengeMapper.countCurrentParticipants(challengeCode);
             if (update.getRecruitmentNum() < currentParticipants) {
@@ -192,6 +258,7 @@ public class ChallengeService {
         }
 
         challengeMapper.updateChallenge(challengeCode, update);
+        completionService.savePolicy(challengeCode, policy);
     }
 
     @Transactional

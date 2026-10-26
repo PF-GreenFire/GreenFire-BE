@@ -19,7 +19,11 @@ public enum NotificationType {
     CHALLENGE_STARTED  ("🚀"), // 참여한 챌린지 시작 (RECRUITING → ONGOING)
     STORE_APPROVED     ("✅"), // 내가 신청한 매장 승인됨
     STORE_REJECTED     ("❌"), // 내가 신청한 매장 반려됨
-    REPORT_HANDLED     ("⚖️");  // 내 신고가 처리됨
+    REPORT_HANDLED     ("⚖️"),  // 내 신고가 처리됨
+
+    // ─── 완주 조건 ───
+    CHALLENGE_COMPLETED     ("🏁"), // 챌린지 완주 (보상 없는 챌린지)
+    CHALLENGE_NOT_COMPLETED ("🌧");  // 챌린지 종료, 완주 조건 미달
 
     private final String emoji;
 

@@ -52,6 +52,22 @@ public class ChallengeController {
         return ResponseEntity.ok(challengeService.getClosingSoonChallenges(limit));
     }
 
+    @Operation(summary = "완주 조건 유형 목록 (조건 편집기용)")
+    @GetMapping("/completion-rule-types")
+    public ResponseEntity<java.util.List<sisosolsol.greenfire.challenge.model.dto.completion.CompletionRuleTypeResponse>> getCompletionRuleTypes() {
+        return ResponseEntity.ok(java.util.Arrays.stream(sisosolsol.greenfire.challenge.completion.CompletionRuleType.values())
+                .map(sisosolsol.greenfire.challenge.model.dto.completion.CompletionRuleTypeResponse::from)
+                .toList());
+    }
+
+    @Operation(summary = "내 완주 진행 상황 (참여자·호스트)")
+    @GetMapping("/{challengeCode}/progress")
+    public ResponseEntity<sisosolsol.greenfire.challenge.model.dto.completion.ChallengeProgressResponse> getMyProgress(
+            @PathVariable Integer challengeCode,
+            @AuthenticationPrincipal AuthUser loginUser) {
+        return ResponseEntity.ok(challengeService.getMyProgress(challengeCode, loginUser.userId()));
+    }
+
     @Operation(summary = "챌린지 상세 조회")
     @GetMapping("/{challengeCode}")
     public ResponseEntity<ChallengeDTO> getChallengeListDetails(

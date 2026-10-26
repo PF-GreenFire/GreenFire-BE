@@ -26,5 +26,7 @@ public class ChallengeCreateDTO {
     private String thumbnailUrl;
     private Integer challengeCategoryCode;
     private ChallengeStatus challengeStatus;
+    /** 완주 조건. 등록 시 비우면 기본 조건, 수정 시 null이면 기존 조건 유지 */
+    private java.util.List<sisosolsol.greenfire.challenge.model.dto.completion.CompletionRuleRequest> completionRules;
 
 }

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="sisosolsol.greenfire.challenge.model.dao.ChallengeCompletionMapper">
+
+    <select id="selectRules" resultType="sisosolsol.greenfire.challenge.model.dto.completion.CompletionRuleRow">
+        SELECT rule_type, target_count, rule_order
+        FROM challenge_completion_rule
+        WHERE challenge_code = #{challengeCode}
+        ORDER BY rule_order ASC, rule_code ASC
+    </select>
+
+    <delete id="deleteRules">
+        DELETE FROM challenge_completion_rule
+        WHERE challenge_code = #{challengeCode}
+    </delete>
+
+    <insert id="insertRules">
+        INSERT INTO challenge_completion_rule (challenge_code, rule_type, target_count, rule_order)
+        VALUES
+        <foreach collection="rules" item="rule" separator=",">
+            (#{challengeCode}, #{rule.ruleType}, #{rule.targetCount}, #{rule.ruleOrder})
+        </foreach>
+    </insert>
+
+    <!-- 인증일 = 게시 시각의 한국 날짜. 같은 날 여러 건은 1행으로 -->
+    <select id="selectCertificationDays" resultType="sisosolsol.greenfire.challenge.model.dto.completion.CertificationDayRow">
+        SELECT DISTINCT
+            p.user_code                                   AS userCode,
+            (p.created_at AT TIME ZONE 'Asia/Seoul')::date AS certDate
+        FROM post p
+        WHERE p.challenge_code = #{challengeCode}
+          AND p.post_type = 'CHALLENGE'
+          AND p.post_status = 'ACTIVE'
+        <if test="userCode != null">
+          AND p.user_code = #{userCode}::uuid
+        </if>
+    </select>
+
+    <update id="updatePartCompleted">
+        UPDATE challenge_part
+        SET completed = #{completed}
+        WHERE challenge_code = #{challengeCode}
+          AND user_code = #{userCode}::uuid
+    </update>
+
+    <select id="selectChallengesToEvaluate" resultType="sisosolsol.greenfire.challenge.model.dto.ChallengeDTO">
+        SELECT
+            challenge_code, created_at, challenge_title, challenge_content,
+            host_user, recruitment_num, start_date, end_date, xp,
+            thumbnail_url, challenge_category_code, challenge_status
+        FROM challenge
+        WHERE challenge_status = 'CLOSED'
+          AND completion_evaluated_at IS NULL
+    </select>
+
+    <update id="markEvaluated">
+        UPDATE challenge
+        SET completion_evaluated_at = CURRENT_TIMESTAMP
+        WHERE challenge_code = #{challengeCode}
+    </update>
+</mapper>

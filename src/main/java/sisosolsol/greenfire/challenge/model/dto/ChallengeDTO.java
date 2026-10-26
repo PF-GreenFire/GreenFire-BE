@@ -25,4 +25,6 @@ public class ChallengeDTO {
     private String thumbnailUrl;
     private Integer challengeCategoryCode;
     private ChallengeStatus challengeStatus;
+    /** 완주 조건 (상세 조회 시에만 채움) */
+    private java.util.List<sisosolsol.greenfire.challenge.model.dto.completion.CompletionRuleResponse> completionRules;
 }
