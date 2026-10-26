@@ -47,4 +47,11 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(exceptionResponse);
     }
+
+    // 하위 타입 전용 핸들러가 없는 CustomException — ExceptionCode의 상태 코드를 그대로 사용
+    @ExceptionHandler(CustomException.class)
+    public ResponseEntity<ExceptionResponse> customException(CustomException e) {
+        final ExceptionResponse exceptionResponse = ExceptionResponse.of(e.getCode(), e.getMessage());
+        return ResponseEntity.status(e.getCode()).body(exceptionResponse);
+    }
 }
