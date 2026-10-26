@@ -32,6 +32,9 @@ public class ReportService {
     private final UserAccountRepository userAccountRepository;
     private final ActivityLogService activityLogService;
     private final sisosolsol.greenfire.notification.service.NotificationService notificationService;
+    private final sisosolsol.greenfire.post.model.dao.PostMapper postMapper;
+    private final sisosolsol.greenfire.feed.model.dao.FeedMapper feedMapper;
+    private final sisosolsol.greenfire.challenge.model.dao.ChallengeMapper challengeMapper;
 
     /**
      * 신고 접수
@@ -41,6 +44,12 @@ public class ReportService {
         // 유효한 리소스 타입인지 확인 (POST, COMMENT, CHALLENGE만 허용)
         if (!isValidResourceType(request.getResourceType())) {
             throw new CustomException(ExceptionCode.INVALID_RESOURCE_TYPE);
+        }
+
+        // 대상 존재 확인 + 본인 콘텐츠 신고 차단
+        UUID owner = findContentOwner(request.getResourceType(), request.getResourceId());
+        if (reporterId.equals(owner)) {
+            throw new CustomException(ExceptionCode.CANNOT_REPORT_OWN_CONTENT);
         }
 
         // 중복 신고 체크 (동일 사용자가 동일 콘텐츠를 PENDING 상태로 신고한 적 있는지)
@@ -129,6 +138,11 @@ public class ReportService {
 
         report.handle(request.getStatus(), adminId, request.getAdminNote());
 
+        // "삭제 처리"는 실제로 대상 콘텐츠를 숨긴다 (소프트 삭제)
+        if (request.getStatus() == ReportStatus.HANDLED_DELETED) {
+            hideContent(report.getResourceType(), report.getResourceId());
+        }
+
         // 신고자에게 처리 결과 알림
         notificationService.notify(report.getReporterId(),
                 sisosolsol.greenfire.notification.model.NotificationType.REPORT_HANDLED,
@@ -155,6 +169,46 @@ public class ReportService {
     /**
      * 신고 가능한 리소스 타입인지 확인
      */
+    /** 신고 대상의 작성자(챌린지는 호스트). 대상이 없으면 REPORT_TARGET_NOT_FOUND */
+    private UUID findContentOwner(ResourceType type, String resourceId) {
+        Integer code = parseResourceCode(resourceId);
+        UUID owner = switch (type) {
+            case POST -> {
+                var post = postMapper.getPost(code);
+                yield post != null ? post.getUserCode() : null;
+            }
+            case COMMENT -> feedMapper.getCommentOwner(code);
+            case CHALLENGE -> {
+                var challenge = challengeMapper.selectChallengeByCode(code);
+                yield challenge != null ? challenge.getHostUser() : null;
+            }
+            default -> null;
+        };
+        if (owner == null) {
+            throw new CustomException(ExceptionCode.REPORT_TARGET_NOT_FOUND);
+        }
+        return owner;
+    }
+
+    private void hideContent(ResourceType type, String resourceId) {
+        Integer code = parseResourceCode(resourceId);
+        switch (type) {
+            case POST -> postMapper.deletePost(code);
+            case COMMENT -> feedMapper.softDeleteComment(code);
+            case CHALLENGE -> challengeMapper.updateChallengeStatus(code,
+                    sisosolsol.greenfire.common.enums.challenge.ChallengeStatus.CANCELLED);
+            default -> { }
+        }
+    }
+
+    private Integer parseResourceCode(String resourceId) {
+        try {
+            return Integer.valueOf(resourceId);
+        } catch (NumberFormatException | NullPointerException e) {
+            throw new CustomException(ExceptionCode.REPORT_TARGET_NOT_FOUND);
+        }
+    }
+
     private boolean isValidResourceType(ResourceType resourceType) {
         return resourceType == ResourceType.POST
                 || resourceType == ResourceType.COMMENT

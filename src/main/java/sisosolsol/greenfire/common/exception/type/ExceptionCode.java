@@ -62,6 +62,7 @@ public enum ExceptionCode {
     CHALLENGE_INVALID_XP(400, "보상 값은 0 이상이어야 합니다."),
     CHALLENGE_CODE_REQUIRED(400, "인증할 챌린지를 선택해주세요."),
     CANNOT_FOLLOW_SELF(400, "본인은 팔로우할 수 없습니다."),
+    CANNOT_REPORT_OWN_CONTENT(400, "본인의 콘텐츠는 신고할 수 없습니다."),
     FILE_SIZE_EXCEEDED(400, "파일 크기가 제한을 초과했습니다."),
     FILE_TYPE_NOT_ALLOWED(400, "허용되지 않은 파일 형식입니다."),
     CANNOT_CHANGE_OWN_ROLE(400, "본인의 역할은 변경할 수 없습니다."),
@@ -77,6 +78,7 @@ public enum ExceptionCode {
 
     // 404 Error - Report
     REPORT_NOT_FOUND(404, "신고를 찾을 수 없습니다."),
+    REPORT_TARGET_NOT_FOUND(404, "신고 대상 콘텐츠를 찾을 수 없습니다."),
 
     // 400 Error - Report
     INVALID_RESOURCE_TYPE(400, "유효하지 않은 리소스 타입입니다."),
