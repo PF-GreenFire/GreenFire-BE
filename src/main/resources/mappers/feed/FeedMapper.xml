@@ -4,14 +4,30 @@
 
 <mapper namespace="sisosolsol.greenfire.feed.model.dao.FeedMapper">
 
+    <!-- 프로필 이미지 URL (FE getImageUrl 이 API 주소를 앞에 붙임). 등록한 이미지가 없으면 NULL -->
+    <sql id="profileImageUrl">
+        CASE WHEN COALESCE(${alias}.profile_key, '') &lt;&gt; ''
+             THEN 'user/' || ${alias}.user_code || '/profile-image'
+        END
+    </sql>
+
+    <!-- 조회자가 작성자를 팔로우 중인지. 비로그인(userCode NULL)이면 FALSE -->
+    <sql id="isFollowingAuthor">
+        EXISTS(
+            SELECT 1 FROM user_follows uf
+            WHERE uf.user_code = #{userCode}::uuid
+              AND uf.target_user = p.user_code
+        )
+    </sql>
+
     <!-- 피드 상세 조회 (좋아요 여부/카운트/댓글 카운트 포함) -->
     <select id="getFeedDetail" resultType="sisosolsol.greenfire.feed.model.dto.FeedDetailDTO">
         SELECT
             p.post_code           AS postCode,
             p.user_code           AS userCode,
             u.nickname            AS nickname,
-            NULL                  AS profileImage,
-            FALSE                 AS isFollowing,
+            <include refid="profileImageUrl"><property name="alias" value="u"/></include> AS profileImage,
+            <include refid="isFollowingAuthor"/> AS isFollowing,
             p.featured            AS featured,
             p.created_at          AS createdAt,
             p.post_content        AS postContent,
@@ -93,7 +109,7 @@
             pc.post_code        AS postCode,
             pc.user_code        AS userCode,
             u.nickname          AS nickname,
-            NULL                AS profileImage,
+            <include refid="profileImageUrl"><property name="alias" value="u"/></include> AS profileImage,
             pc.comment_content  AS commentContent,
             pc.created_at       AS createdAt
         FROM post_comment pc
@@ -120,7 +136,7 @@
             pc.post_code        AS postCode,
             pc.user_code        AS userCode,
             u.nickname          AS nickname,
-            NULL                AS profileImage,
+            <include refid="profileImageUrl"><property name="alias" value="u"/></include> AS profileImage,
             pc.comment_content  AS commentContent,
             pc.created_at       AS createdAt
         FROM post_comment pc
@@ -145,8 +161,8 @@
         p.post_code           AS postCode,
         p.user_code           AS userCode,
         u.nickname            AS nickname,
-        NULL                  AS profileImage,
-        FALSE                 AS isFollowing,
+        <include refid="profileImageUrl"><property name="alias" value="u"/></include> AS profileImage,
+        <include refid="isFollowingAuthor"/> AS isFollowing,
         p.featured            AS featured,
         p.created_at          AS createdAt,
         p.post_content        AS postContent,
