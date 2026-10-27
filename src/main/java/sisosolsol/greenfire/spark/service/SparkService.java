@@ -96,8 +96,8 @@ public class SparkService {
         return sparkMapper.countHistory(userCode, action, sourceType, sourceCode) > 0;
     }
 
-    /** 좋아요 수신에 의한 적립이 게시물당 캡 도달했는지 */
-    public boolean isLikeRewardCapped(UUID userCode, int postCode) {
-        return sparkMapper.countHistory(userCode, "LIKE_RECEIVED", "POST", postCode) >= LIKE_REWARD_CAP;
+    /** 이 게시물로 좋아요 보상을 받은 횟수 */
+    public int likeRewardCount(UUID userCode, int postCode) {
+        return sparkMapper.countHistory(userCode, "LIKE_RECEIVED", "POST", postCode);
     }
 }

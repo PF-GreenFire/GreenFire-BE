@@ -54,14 +54,18 @@ public class FeedService {
         }
         int count = feedMapper.countLike(postCode);
 
-        // 좋아요 추가 시 N개 단위 도달하면 작성자에게 1 spark (게시물당 캡)
-        if (!alreadyLiked && count > 0 && count % SparkService.LIKE_PER_REWARD == 0) {
+        // 좋아요가 "처음 도달한" N개 단위마다 작성자에게 1 spark (게시물당 캡).
+        // 이미 받은 보상 횟수 k 기준으로 (k+1)*N개에 처음 닿을 때만 지급 → 취소·재좋아요로 같은 단위를 반복해도 재지급 없음
+        if (!alreadyLiked && count >= SparkService.LIKE_PER_REWARD) {
             FeedDetailDTO detail = feedMapper.getFeedDetail(postCode, null);
             if (detail != null && detail.getUserCode() != null
-                    && !detail.getUserCode().equals(userCode) // 자기 글 자추 방지
-                    && !sparkService.isLikeRewardCapped(detail.getUserCode(), postCode)) {
-                sparkService.award(detail.getUserCode(), 1,
-                        "LIKE_RECEIVED", "POST", postCode);
+                    && !detail.getUserCode().equals(userCode)) { // 자기 글 자추 방지
+                int rewarded = sparkService.likeRewardCount(detail.getUserCode(), postCode);
+                if (rewarded < SparkService.LIKE_REWARD_CAP
+                        && count >= (rewarded + 1) * SparkService.LIKE_PER_REWARD) {
+                    sparkService.award(detail.getUserCode(), 1,
+                            "LIKE_RECEIVED", "POST", postCode);
+                }
             }
         }
 
