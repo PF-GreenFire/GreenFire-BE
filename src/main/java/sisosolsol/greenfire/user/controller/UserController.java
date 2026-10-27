@@ -11,6 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
+import org.springframework.http.CacheControl;
+import org.springframework.http.MediaTypeFactory;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -106,6 +109,35 @@ public class UserController {
         if (loginUser == null) return ResponseEntity.status(401).build();
         User user = userService.getUserProfile(loginUser.userId());
         return ResponseEntity.ok(user);
+    }
+
+    @Operation(summary = "사용자 프로필 이미지 조회 (공개)")
+    @GetMapping("/{userId}/profile-image")
+    public ResponseEntity<Resource> getPublicProfileImage(@PathVariable UUID userId, WebRequest webRequest)
+            throws java.io.IOException {
+        return imageResponse(userService.getPublicProfileImage(userId), webRequest);
+    }
+
+    @Operation(summary = "사용자 커버 이미지 조회 (공개)")
+    @GetMapping("/{userId}/cover-image")
+    public ResponseEntity<Resource> getPublicCoverImage(@PathVariable UUID userId, WebRequest webRequest)
+            throws java.io.IOException {
+        return imageResponse(userService.getPublicCoverImage(userId), webRequest);
+    }
+
+    /** URL이 사용자마다 고정이라 이미지 교체가 바로 보이도록 매번 재검증(변경 없으면 304) */
+    private ResponseEntity<Resource> imageResponse(Path filePath, WebRequest webRequest) throws java.io.IOException {
+        long lastModified = java.nio.file.Files.getLastModifiedTime(filePath).toMillis();
+        if (webRequest.checkNotModified(lastModified)) {
+            return null;
+        }
+        MediaType mediaType = MediaTypeFactory.getMediaType(filePath.getFileName().toString())
+                .orElse(MediaType.IMAGE_JPEG);
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .cacheControl(CacheControl.noCache())
+                .lastModified(lastModified)
+                .body(new FileSystemResource(filePath));
     }
 
     @Operation(summary = "내 프로필 이미지 조회")

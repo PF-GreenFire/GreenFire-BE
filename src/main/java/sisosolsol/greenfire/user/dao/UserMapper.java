@@ -43,6 +43,10 @@ public interface UserMapper {
 
     String findImagePathByImageCode(@Param("imageCode") int imageCode);
 
+    String findProfileKey(@Param("userCode") UUID userCode);
+
+    String findCoverKey(@Param("userCode") UUID userCode);
+
     sisosolsol.greenfire.user.dto.PublicProfileRow findPublicProfile(
             @Param("targetCode") UUID targetCode,
             @Param("viewerCode") UUID viewerCode);

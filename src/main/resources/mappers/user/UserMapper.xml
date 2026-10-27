@@ -50,6 +50,26 @@
             user_code = #{userCode}
     </select>
 
+    <!-- 공개 프로필 이미지 URL (FeedMapper.profileImageUrl 과 같은 규칙). 등록한 이미지가 없으면 NULL -->
+    <sql id="profileImageUrl">
+        CASE WHEN COALESCE(u.profile_key, '') &lt;&gt; ''
+             THEN 'user/' || u.user_code || '/profile-image'
+        END
+    </sql>
+
+    <!-- 공개 프로필 이미지용 저장 키 -->
+    <select id="findProfileKey" resultType="string">
+        SELECT profile_key
+        FROM users
+        WHERE user_code = #{userCode}::uuid
+    </select>
+
+    <select id="findCoverKey" resultType="string">
+        SELECT cover_image_key
+        FROM users
+        WHERE user_code = #{userCode}::uuid
+    </select>
+
     <select id="findImagePathByImageCode">
         SELECT
             path
@@ -166,7 +186,7 @@
         SELECT
             u.user_code as userCode,
             u.nickname as nickname,
-            u.profile_image as profileImage,
+            <include refid="profileImageUrl"/> AS profileImage,
             (followings.user_code IS NOT NULL) AS isFollowing,
             (followers.user_code IS NOT NULL) AS isFollower
         FROM

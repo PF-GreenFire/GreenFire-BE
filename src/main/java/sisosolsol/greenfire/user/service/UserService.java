@@ -48,6 +48,7 @@ public class UserService {
     private final sisosolsol.greenfire.badge.service.BadgeService badgeService;
     private final sisosolsol.greenfire.notification.service.NotificationService notificationService;
     private final sisosolsol.greenfire.post.model.dao.PostMapper postMapper;
+    private final UserImageResolver userImageResolver;
 
     public User getUserProfile(UUID userCode) {
 //        try {
@@ -291,6 +292,20 @@ public class UserService {
 
     public String findImagePathByImageCode(int profileImageCode) {
         return userMapper.findImagePathByImageCode(profileImageCode);
+    }
+
+    /** 누구나 볼 수 있는 프로필 이미지 파일. 등록한 이미지가 없거나 파일이 없으면 FILE_NOT_FOUND */
+    @Transactional(readOnly = true)
+    public Path getPublicProfileImage(UUID userCode) {
+        return userImageResolver.resolve(userMapper.findProfileKey(userCode))
+                .orElseThrow(() -> new NotFoundException(ExceptionCode.FILE_NOT_FOUND));
+    }
+
+    /** 누구나 볼 수 있는 커버 이미지 파일. 등록한 이미지가 없거나 파일이 없으면 FILE_NOT_FOUND */
+    @Transactional(readOnly = true)
+    public Path getPublicCoverImage(UUID userCode) {
+        return userImageResolver.resolve(userMapper.findCoverKey(userCode))
+                .orElseThrow(() -> new NotFoundException(ExceptionCode.FILE_NOT_FOUND));
     }
 
     public Path getProfileImage(int profileImageCode) {
